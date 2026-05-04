@@ -1,296 +1,83 @@
 # ScoreMate Developer Commands
 
-## Always run commands from project folder
-
-Project folder example:
+Run commands from the project folder:
 
 ```bash
 cd ~/scoremate
 ```
 
-If command fails with missing project/config, first check:
-
-```bash
-pwd
-ls
-```
-
-You should see files like:
-
-```text
-package.json
-app.json
-eas.json
-app/
-```
-
-## Install dependencies
-
-```bash
-npm install
-```
-
-Use this after cloning repo or after pulling new dependency changes.
-
-## Start app locally
-
-```bash
-npx expo start
-```
-
-Expo = local development server for testing app before publishing.
-
-## Test on phone with Expo Go
-
-Expo Go = phone app used to preview the app during development.
-
-1. Install Expo Go on phone
-2. Run from project folder:
-
-```bash
-npx expo start
-```
-
-3. Scan QR code
-
-If phone does not update, press:
-
-```bash
-r
-```
-
-To stop server:
-
-```bash
-Ctrl + C
-```
-
-## If QR code does not open app
-
-Try tunnel:
-
-```bash
-npx expo start --tunnel
-```
-
-If tunnel asks to install ngrok and global install fails, skip tunnel and use normal local Wi-Fi:
-
-```bash
-npx expo start
-```
-
-Make sure:
-
-- Mac and phone are on same Wi-Fi
-- VPN is off
-- Expo Go is installed
-
-## Git save and push
-
-```bash
-git status
-git add .
-git commit -m "your message"
-git push
-```
-
-If push asks for GitHub password, use GitHub token, not account password.
-
-## If GitHub push says password authentication is not supported
-
-GitHub does not accept normal password in terminal.
-
-Use:
-
-```text
-Username: GitHub username
-Password: GitHub Personal Access Token
-```
-
-Then push again:
-
-```bash
-git push
-```
-
-## If Git push is rejected because remote has work
-
-Try:
-
-```bash
-git pull origin main --allow-unrelated-histories
-git push -u origin main
-```
-
-If GitHub repo has nothing important and you intentionally want local code to replace remote:
-
-```bash
-git push -u origin main --force
-```
-
-Use force only when sure.
-
-## Login to EAS
-
-EAS = Expo cloud build service. It creates APK/AAB/IPA files.
-
-Use local EAS CLI from project:
-
-```bash
-npx eas-cli login
-```
-
-## If npx eas login fails
-
-Use this instead:
-
-```bash
-npx eas-cli login
-```
-
-Do not use:
-
-```bash
-npx eas login
-```
-
-## If global npm install gives EACCES permission error on Mac
-
-Example failing command:
-
-```bash
-npm install -g eas-cli
-```
-
-Error may say:
-
-```text
-EACCES: permission denied, mkdir '/usr/local/lib/node_modules/...'
-```
-
-Use local install instead:
-
-```bash
-npm install --save-dev eas-cli
-npx eas-cli login
-```
-
-Same idea for Expo CLI.
-
-Prefer using:
-
-```bash
-npx expo start
-```
-
-instead of installing Expo globally.
-
-## Configure EAS build
-
-Only needed first time or after config reset:
-
-```bash
-npx eas-cli build:configure
-```
-
-Choose Android first if asked.
-
-## Build Android test APK
-
-APK = Android install file for testing/share with Android users.
-
-```bash
-npx eas-cli build --platform android --profile preview
-```
-
-After build finishes, download APK from Expo build page and share it.
-
-## Build Android Play Store AAB
-
-AAB = Android App Bundle for Google Play Store upload.
-
-```bash
-npx eas-cli build --platform android --profile production
-```
-
-## If Android EAS build fails because AsyncStorage cannot resolve
-
-Example error:
+If a command says project/config is missing, run `pwd` and `ls`. You should see `package.json`, `app.json`, `eas.json`, and `app/`.
+
+## Daily Commands
+
+| Task | Command | Notes |
+| --- | --- | --- |
+| Install dependencies | `npm install` | After clone/pull dependency changes |
+| Start app | `npx expo start` | Local dev server |
+| Test on phone | `npx expo start` | Scan QR with Expo Go |
+| Refresh Expo Go | `r` | Press in Expo terminal |
+| Stop server | `Ctrl + C` | Press in terminal |
+| Lint after changes | `npm run lint` | Skip only if script is missing |
+
+## Git
+
+| Task | Command |
+| --- | --- |
+| Check changes | `git status` |
+| Save changes | `git add .` |
+| Commit | `git commit -m "describe change"` |
+| Push | `git push` |
+| Pull then push if remote has work | `git pull origin main --allow-unrelated-histories` then `git push -u origin main` |
+| Replace remote with local code | `git push -u origin main --force` |
+
+Use force only when sure. If GitHub asks for a password, use a GitHub Personal Access Token, not your account password.
+
+## Expo / EAS
+
+| Task | Command | Notes |
+| --- | --- | --- |
+| Login to EAS | `npx eas-cli login` | Use this, not `npx eas login` |
+| Configure EAS | `npx eas-cli build:configure` | First time or after config reset |
+| Android test APK | `npx eas-cli build --platform android --profile preview` | Download APK from Expo build page |
+| Android Play Store AAB | `npx eas-cli build --platform android --profile production` | For Google Play upload |
+| iPhone local test | `npx expo start` | Scan QR with Expo Go |
+| iOS build | `npx eas-cli build --platform ios --profile preview` | Needs Apple setup |
+
+APK = Android install file. AAB = Google Play upload file. IPA = iPhone app file. iPhone cannot install APK; official iPhone testing uses TestFlight.
+
+## Common Fixes
+
+| Problem | Fix |
+| --- | --- |
+| QR code does not open app | Try `npx expo start --tunnel` |
+| Tunnel/ngrok install fails | Use `npx expo start`; keep Mac and phone on same Wi-Fi, VPN off |
+| `npm install -g eas-cli` gives `EACCES` | Use local CLI: `npm install --save-dev eas-cli` then `npx eas-cli login` |
+| `npx eas login` fails | Use `npx eas-cli login` |
+| GitHub rejects password | Use GitHub username + Personal Access Token |
+| Git push rejected | Pull first: `git pull origin main --allow-unrelated-histories` |
+| AsyncStorage Android EAS error | Run `npx expo install @react-native-async-storage/async-storage`, then `npm install`, then rebuild |
+
+AsyncStorage error example:
 
 ```text
 Could not find org.asyncstorage.shared_storage:storage-android:1.0.0
 ```
 
-Fix by installing Expo-compatible AsyncStorage:
-
-```bash
-npx expo install @react-native-async-storage/async-storage
-npm install
-```
-
-Then rebuild:
-
-```bash
-npx eas-cli build --platform android --profile preview
-```
-
-## iPhone / iOS testing
-
-iPhone cannot install APK.
-
-Quick local iPhone test:
-
-```bash
-npx expo start
-```
-
-Then scan QR code with Expo Go.
-
-Official iPhone testing uses TestFlight.
-
-IPA = iPhone app build file.
-
-Apple Developer account is needed for TestFlight/App Store.
-
-## Build iOS file
-
-Only after Apple setup is ready:
-
-```bash
-npx eas-cli build --platform ios --profile preview
-```
-
-## After Codex or manual code changes
-
-Run:
+## After Code Changes
 
 ```bash
 npm run lint
-```
-
-If lint script does not exist, skip.
-
-Then test:
-
-```bash
 npx expo start
-```
-
-Then save:
-
-```bash
 git add .
 git commit -m "describe change"
 git push
 ```
 
-## Helpful docs
+## Docs
 
-App context: docs/APP_CONTEXT.md
+| Topic | File |
+| --- | --- |
+| App context | `docs/APP_CONTEXT.md` |
+| Least Count rules | `docs/LEAST_COUNT_RULES.md` |
 
-Least Count rules: docs/LEAST_COUNT_RULES.md
-
-Important:
-
-- Keep README short and command-focused.
-- Put app explanation in docs files only.
+Keep README command-focused. Put app explanation in docs files only.
