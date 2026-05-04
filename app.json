@@ -1,17 +1,19 @@
 {
   "expo": {
-    "name": "least-count-scorekeeper",
-    "slug": "least-count-scorekeeper",
+    "name": "ScoreMate",
+    "slug": "scoremate",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "leastcountscorekeeper",
+    "scheme": "scoremate",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.pavankumarmulka.scoremate",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.pavankumarmulka.scoremate",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -43,6 +45,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "19267638-9bf5-414a-bdef-260eeafef5d7"
+      }
     }
   }
 }

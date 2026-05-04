@@ -1,98 +1,146 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.logoMark}>
+          <View style={styles.logoBarTall} />
+          <View style={styles.logoBarMedium} />
+          <View style={styles.logoBarShort} />
+        </View>
+        <View>
+          <Text style={styles.title}>ScoreMate</Text>
+          <Text style={styles.subtitle}>Score tracking for your favorite games</Text>
+        </View>
+      </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <View style={styles.gamesList}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/games/least-count')}
+          style={({ pressed }) => [styles.gameCard, pressed && styles.pressed]}>
+          <View style={styles.gameAccent} />
+          <View style={styles.gameText}>
+            <Text style={styles.gameTitle}>Least Count</Text>
+            <Text style={styles.gameDescription}>Track rounds, totals, and out limit</Text>
+          </View>
+        </Pressable>
+
+        <View style={[styles.gameCard, styles.disabledCard]}>
+          <View style={[styles.gameAccent, styles.disabledAccent]} />
+          <View style={styles.gameText}>
+            <Text style={[styles.gameTitle, styles.disabledText]}>More games coming soon</Text>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flexGrow: 1,
+    gap: 32,
+    paddingHorizontal: 20,
+    paddingTop: 72,
+    paddingBottom: 32,
+    backgroundColor: '#F4F6F8',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  logoMark: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: '#111827',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 4,
+    paddingBottom: 12,
+  },
+  logoBarTall: {
+    width: 7,
+    height: 28,
+    borderRadius: 3,
+    backgroundColor: '#F4D35E',
+  },
+  logoBarMedium: {
+    width: 7,
+    height: 21,
+    borderRadius: 3,
+    backgroundColor: '#73D2DE',
+  },
+  logoBarShort: {
+    width: 7,
+    height: 14,
+    borderRadius: 3,
+    backgroundColor: '#F95738',
+  },
+  title: {
+    color: '#111827',
+    fontSize: 34,
+    fontWeight: '800',
+    lineHeight: 40,
+  },
+  subtitle: {
+    color: '#64748B',
+    fontSize: 16,
+    lineHeight: 23,
+    maxWidth: 260,
+  },
+  gamesList: {
+    gap: 14,
+  },
+  gameCard: {
+    minHeight: 108,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    overflow: 'hidden',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
+    elevation: 2,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  pressed: {
+    opacity: 0.8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  gameAccent: {
+    alignSelf: 'stretch',
+    width: 8,
+    backgroundColor: '#2563EB',
+  },
+  gameText: {
+    flex: 1,
+    gap: 6,
+    padding: 20,
+  },
+  gameTitle: {
+    color: '#111827',
+    fontSize: 22,
+    fontWeight: '700',
+    lineHeight: 28,
+  },
+  gameDescription: {
+    color: '#64748B',
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  disabledCard: {
+    backgroundColor: '#E9EEF4',
+  },
+  disabledAccent: {
+    backgroundColor: '#94A3B8',
+  },
+  disabledText: {
+    color: '#64748B',
   },
 });
