@@ -1,0 +1,31 @@
+# Current Scoring Rules
+
+- Match can use a scoring preset
+- Presets: out limit, highest score wins, lowest score wins, first to target
+- Match can also start from a game preset that pre-fills scoring style and target
+- Game library presets are grouped by Cards, Board, Dice, Yard, and Party
+- Game presets include short rules popup summaries with objective, scoring, winning condition, and notes
+- Current game presets include Least Count, Points Rummy, Call Break, UNO, Rummy 500, Hearts, Spades, Gin Rummy, Euchre, Cribbage, Carrom, Dominoes, Cornhole, Horseshoes, Ladder Toss, Yahtzee, Farkle, and Generic Race to 500
+- Match name is optional; app generates Match 1, Match 2, etc. when blank
+- Create Match keeps game library and scoring style collapsed by default
+- Default out limit: 300
+- First-to-target default: 500
+- Out limit and first-to-target values can be edited during a match
+- Match settings can rename a match, change the game preset, change the scoring style, or adjust team grouping
+- Match settings can rename players, add a late player, or remove a player with confirmation when scores exist
+- New matches can optionally group players into Team A and Team B
+- Team totals are calculated from the same round history as player totals
+- In out limit scoring, player is out when total score >= limit
+- 0 score is allowed
+- Out player disabled in future rounds for out limit scoring
+- New round entry uses visible inline score inputs and supports clearing an unsaved round draft
+- Unsaved round draft is autosaved locally and restored when reopening the match
+- Rounds can be edited
+- Rounds can be deleted with confirmation
+- Round history shows per-round total and best score
+- Match can be completed to lock score entry
+- Completed match can be reopened
+- Match summary sheet shows leader, team totals, round-best counts, best single round, and out players
+- Scoreboard summary can be shared through the phone share sheet
+- Totals calculated from round history
+- Data stored locally on phone

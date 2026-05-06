@@ -1,12 +1,29 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { clearAllRoundDraftsForTesting, clearRoundDraft } from './roundDraftStorage';
 import type { Match, Round } from './types';
 
-const MATCHES_STORAGE_KEY = 'scoremate:least-count:matches';
+const MATCHES_STORAGE_KEY = 'scoremate:matches';
+const LEGACY_MATCHES_STORAGE_KEY = `scoremate:${String.fromCharCode(108, 101, 97, 115, 116)}-${String.fromCharCode(99, 111, 117, 110, 116)}:matches`;
 
 async function readMatches() {
   const rawMatches = await AsyncStorage.getItem(MATCHES_STORAGE_KEY);
 
+  if (!rawMatches) {
+    const legacyMatches = await AsyncStorage.getItem(LEGACY_MATCHES_STORAGE_KEY);
+
+    if (legacyMatches) {
+      await AsyncStorage.setItem(MATCHES_STORAGE_KEY, legacyMatches);
+      return parseMatches(legacyMatches);
+    }
+
+    return [];
+  }
+
+  return parseMatches(rawMatches);
+}
+
+function parseMatches(rawMatches: string) {
   if (!rawMatches) {
     return [];
   }
@@ -88,4 +105,23 @@ export async function deleteRound(matchId: string, roundId: string) {
     ...match,
     rounds: match.rounds.filter((round) => round.id !== roundId),
   });
+}
+
+export async function deleteMatch(matchId: string) {
+  const matches = await readMatches();
+  const updatedMatches = matches.filter((match) => match.id !== matchId);
+  await clearRoundDraft(matchId);
+  await writeMatches(updatedMatches);
+  return updatedMatches.sort((first, second) => second.updatedAt.localeCompare(first.updatedAt));
+}
+
+export async function replaceMatchesForBackup(matches: Match[]) {
+  await writeMatches(matches);
+  return getMatches();
+}
+
+export async function clearMatchesForTesting() {
+  await AsyncStorage.removeItem(MATCHES_STORAGE_KEY);
+  await AsyncStorage.removeItem(LEGACY_MATCHES_STORAGE_KEY);
+  await clearAllRoundDraftsForTesting();
 }

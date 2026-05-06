@@ -50,6 +50,7 @@ APK = Android install file. AAB = Google Play upload file. IPA = iPhone app file
 | Problem | Fix |
 | --- | --- |
 | QR code does not open app | Try `npx expo start --tunnel` |
+| `expo start --tunnel` says `Cannot read properties of undefined (reading 'body')` | Tunnel/ngrok failed. Use LAN: `npx expo start --lan --clear` |
 | Tunnel/ngrok install fails | Use `npx expo start`; keep Mac and phone on same Wi-Fi, VPN off |
 | `npm install -g eas-cli` gives `EACCES` | Use local CLI: `npm install --save-dev eas-cli` then `npx eas-cli login` |
 | `npx eas login` fails | Use `npx eas-cli login` |
@@ -78,6 +79,7 @@ git push
 | Topic | File |
 | --- | --- |
 | App context | `docs/APP_CONTEXT.md` |
-| Least Count rules | `docs/LEAST_COUNT_RULES.md` |
+| Scoring rules | `docs/SCORING_RULES.md` |
+| Monetization plan | `docs/MONETIZATION_PLAN.md` |
 
 Keep README command-focused. Put app explanation in docs files only.

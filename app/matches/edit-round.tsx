@@ -1,14 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { addRound, getMatch } from '@/features/games/least-count/matchStorage';
-import { getPlayerStandings } from '@/features/games/least-count/scoreCalculator';
-import type { Match, PlayerScore, Round } from '@/features/games/least-count/types';
-
-function createId(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
+import { getMatch, updateRound } from '@/features/matches/matchStorage';
+import type { Match, PlayerScore, Round } from '@/features/matches/types';
 
 function parseScore(value: string) {
   if (value.trim() === '') {
@@ -19,109 +14,129 @@ function parseScore(value: string) {
   return Number.isFinite(score) && score >= 0 ? score : null;
 }
 
-export default function AddRoundScreen() {
-  const { matchId } = useLocalSearchParams<{ matchId?: string }>();
+export default function EditRoundScreen() {
+  const { matchId, roundId } = useLocalSearchParams<{ matchId?: string; roundId?: string }>();
   const [match, setMatch] = useState<Match | null>(null);
+  const [round, setRound] = useState<Round | null>(null);
   const [scoresByPlayer, setScoresByPlayer] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (!matchId) {
+    if (!matchId || !roundId) {
       return;
     }
 
     getMatch(matchId).then((storedMatch) => {
+      const storedRound = storedMatch?.rounds.find((matchRound) => matchRound.id === roundId) ?? null;
       setMatch(storedMatch);
-    });
-  }, [matchId]);
+      setRound(storedRound);
 
-  async function handleSaveRound() {
-    if (!match || !matchId) {
+      if (storedRound) {
+        setScoresByPlayer(
+          Object.fromEntries(storedRound.scores.map((score) => [score.playerId, String(score.score)])),
+        );
+      }
+    });
+  }, [matchId, roundId]);
+
+  const roundPlayers = useMemo(() => {
+    if (!match || !round) {
+      return [];
+    }
+
+    return match.players.filter((player) => round.scores.some((score) => score.playerId === player.id));
+  }, [match, round]);
+
+  async function handleSaveChanges() {
+    if (!matchId || !round) {
       return;
     }
 
-    const standings = getPlayerStandings(match);
-    const roundScores: PlayerScore[] = [];
+    const updatedScores: PlayerScore[] = [];
 
-    for (const standing of standings) {
-      if (standing.isOut) {
-        continue;
-      }
-
-      const parsedScore = parseScore(scoresByPlayer[standing.player.id] ?? '');
+    for (const player of roundPlayers) {
+      const parsedScore = parseScore(scoresByPlayer[player.id] ?? '');
 
       if (parsedScore === null) {
-        Alert.alert('Invalid score', `${standing.player.name}'s score must be a number greater than or equal to 0.`);
+        Alert.alert('Invalid score', `${player.name}'s score must be a number greater than or equal to 0.`);
         return;
       }
 
-      roundScores.push({
-        playerId: standing.player.id,
+      updatedScores.push({
+        playerId: player.id,
         score: parsedScore,
       });
     }
 
-    const round: Round = {
-      id: createId('round'),
-      createdAt: new Date().toISOString(),
-      scores: roundScores,
-    };
-
-    await addRound(matchId, round);
+    await updateRound(matchId, {
+      ...round,
+      scores: updatedScores,
+    });
     router.back();
   }
 
-  if (!match) {
+  if (!match || !round) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.emptyTitle}>Match not found</Text>
+        <Text style={styles.emptyTitle}>Round not found</Text>
       </View>
     );
   }
 
-  const standings = getPlayerStandings(match);
-
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+      style={styles.keyboardView}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.container}
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
-        <Text style={styles.title}>Add round</Text>
+        <Text style={styles.title}>Edit round</Text>
         <Text style={styles.subtitle}>{match.name}</Text>
       </View>
 
       <View style={styles.scoreList}>
-        {standings.map((standing) => (
-          <View key={standing.player.id} style={[styles.scoreCard, standing.isOut && styles.disabledCard]}>
+        {roundPlayers.map((player) => (
+          <View key={player.id} style={styles.scoreCard}>
             <View style={styles.playerInfo}>
-              <Text style={[styles.playerName, standing.isOut && styles.disabledText]}>{standing.player.name}</Text>
-              <Text style={[styles.playerMeta, standing.isOut && styles.disabledText]}>
-                {standing.isOut ? 'Out - disabled' : `Current total ${standing.total}`}
-              </Text>
+              <Text style={styles.playerName}>{player.name}</Text>
+              <Text style={styles.playerMeta}>Round score</Text>
             </View>
             <TextInput
-              editable={!standing.isOut}
               keyboardType="number-pad"
               onChangeText={(value) =>
                 setScoresByPlayer((currentScores) => ({
                   ...currentScores,
-                  [standing.player.id]: value,
+                  [player.id]: value,
                 }))
               }
               placeholder="0"
               placeholderTextColor="#94A3B8"
-              style={[styles.scoreInput, standing.isOut && styles.disabledInput]}
-              value={scoresByPlayer[standing.player.id] ?? ''}
+              style={styles.scoreInput}
+              value={scoresByPlayer[player.id] ?? ''}
             />
           </View>
         ))}
       </View>
 
-      <Pressable accessibilityRole="button" onPress={handleSaveRound} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
-        <Text style={styles.primaryButtonText}>Save Round</Text>
+      <Pressable accessibilityRole="button" onPress={handleSaveChanges} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
+        <Text style={styles.primaryButtonText}>Save Changes</Text>
       </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+    backgroundColor: '#F4F6F8',
+  },
+  screen: {
+    backgroundColor: '#F4F6F8',
+  },
   container: {
     flexGrow: 1,
     gap: 18,
@@ -140,14 +155,14 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#111827',
-    fontSize: 34,
+    fontSize: 24,
     fontWeight: '800',
-    lineHeight: 40,
+    lineHeight: 29,
   },
   subtitle: {
     color: '#64748B',
-    fontSize: 16,
-    lineHeight: 23,
+    fontSize: 14,
+    lineHeight: 20,
   },
   scoreList: {
     gap: 12,
@@ -167,9 +182,6 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 2,
   },
-  disabledCard: {
-    backgroundColor: '#E9EEF4',
-  },
   playerInfo: {
     flex: 1,
     gap: 5,
@@ -184,9 +196,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  disabledText: {
-    color: '#94A3B8',
-  },
   scoreInput: {
     width: 96,
     minHeight: 58,
@@ -199,12 +208,8 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textAlign: 'center',
   },
-  disabledInput: {
-    backgroundColor: '#DCE3EC',
-    color: '#94A3B8',
-  },
   primaryButton: {
-    minHeight: 56,
+    minHeight: 44,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
