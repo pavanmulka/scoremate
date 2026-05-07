@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { createScoreMateBackup, parseScoreMateBackup, restoreScoreMateBackup, stringifyBackup } from '@/features/matches/dataBackup';
+import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
 import { useI18n } from '@/src/i18n';
 
 export default function BackupScreen() {
   const theme = useScoreMateTheme();
   const { t } = useI18n();
+  const keyboardBottomInset = useKeyboardBottomInset();
   const [backupText, setBackupText] = useState('');
   const [isWorking, setIsWorking] = useState(false);
   const hasBackupText = backupText.trim().length > 0;
@@ -71,14 +73,12 @@ export default function BackupScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+    <View
       style={[styles.keyboardView, { backgroundColor: theme.colors.screen }]}>
       <ScrollView
         style={[styles.screen, { backgroundColor: theme.colors.screen }]}
-        contentContainerStyle={styles.container}
-        keyboardDismissMode="interactive"
+        contentContainerStyle={[styles.container, keyboardBottomInset > 0 && { paddingBottom: keyboardBottomInset + 26 }]}
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         keyboardShouldPersistTaps="handled">
         <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
           <Text style={styles.title}>{t('backupRestore')}</Text>
@@ -123,7 +123,7 @@ export default function BackupScreen() {
           <Text style={styles.infoText}>Matches, players, rounds, scoring rules, match status, quick-add saved players, and selected theme.</Text>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

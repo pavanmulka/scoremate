@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { getMatch, updateRound } from '@/features/matches/matchStorage';
+import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import type { Match, PlayerScore, Round } from '@/features/matches/types';
 
 function parseScore(value: string) {
@@ -15,6 +16,7 @@ function parseScore(value: string) {
 }
 
 export default function EditRoundScreen() {
+  const keyboardBottomInset = useKeyboardBottomInset();
   const { matchId, roundId } = useLocalSearchParams<{ matchId?: string; roundId?: string }>();
   const [match, setMatch] = useState<Match | null>(null);
   const [round, setRound] = useState<Round | null>(null);
@@ -83,14 +85,12 @@ export default function EditRoundScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+    <View
       style={styles.keyboardView}>
       <ScrollView
         style={styles.screen}
-        contentContainerStyle={styles.container}
-        keyboardDismissMode="interactive"
+        contentContainerStyle={[styles.container, keyboardBottomInset > 0 && { paddingBottom: keyboardBottomInset + 20 }]}
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <Text style={styles.title}>Edit round</Text>
@@ -125,7 +125,7 @@ export default function EditRoundScreen() {
         <Text style={styles.primaryButtonText}>Save Changes</Text>
       </Pressable>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

@@ -1,6 +1,6 @@
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +20,7 @@ import { getScoringPreset, getScoringRuleSummary, scoringPresets } from '@/featu
 import { getPlayerStandings } from '@/features/matches/scoreCalculator';
 import { formatMatchShareText } from '@/features/matches/shareFormatter';
 import { getHasSeenWelcome, markWelcomeSeen } from '@/features/matches/welcomeStorage';
+import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
 import { useI18n, type TranslationKey } from '@/src/i18n';
 import type { Match, ScoringMode } from '@/features/matches/types';
@@ -76,6 +77,7 @@ export default function HomeScreen() {
   const theme = useScoreMateTheme();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
+  const keyboardBottomInset = useKeyboardBottomInset();
   const [matches, setMatches] = useState<Match[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [matchFilter, setMatchFilter] = useState<MatchFilter>('all');
@@ -221,32 +223,24 @@ export default function HomeScreen() {
 
   return (
     <>
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <View
       style={[styles.keyboardView, { backgroundColor: theme.colors.screen }]}>
     <ScrollView
-      automaticallyAdjustKeyboardInsets
-      keyboardDismissMode="interactive"
+      keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
       keyboardShouldPersistTaps="handled"
       scrollIndicatorInsets={{ bottom: insets.bottom + 16 }}
       style={[styles.screen, { backgroundColor: theme.colors.screen }]}
-      contentContainerStyle={[styles.container, { paddingTop: Math.max(14, insets.top + 8), paddingBottom: Math.max(26, insets.bottom + 26) }]}>
+      contentContainerStyle={[styles.container, { paddingTop: Math.max(14, insets.top + 8), paddingBottom: Math.max(26, insets.bottom + 26, keyboardBottomInset + 26) }]}>
       <View style={[styles.homeHeader, { backgroundColor: theme.colors.hero }]}>
         <View style={styles.homeTopRow}>
           <View style={styles.brandRow}>
-            <View style={styles.logoMark}>
-              <View style={[styles.logoBadge, { backgroundColor: theme.colors.hero }]}>
-                <Text style={styles.logoInitial}>S</Text>
-              </View>
-              <View style={styles.logoBarsRow}>
-                <View style={[styles.logoBarTall, { backgroundColor: theme.colors.logoBars[0] }]} />
-                <View style={[styles.logoBarMedium, { backgroundColor: theme.colors.logoBars[1] }]} />
-                <View style={[styles.logoBarShort, { backgroundColor: theme.colors.logoBars[2] }]} />
-              </View>
-            </View>
-            <View style={styles.headerText}>
-              <Text style={[styles.kicker, { color: theme.colors.accent }]}>Scores for any game</Text>
-              <Text style={styles.title}>{t('homeTitle')}</Text>
+            <View style={styles.wordmarkCard}>
+              <Image
+                accessibilityLabel="ScoreMate"
+                resizeMode="contain"
+                source={require('@/assets/images/scoremate-wordmark.png')}
+                style={styles.wordmarkImage}
+              />
             </View>
           </View>
           <Pressable
@@ -574,7 +568,7 @@ export default function HomeScreen() {
         ) : null}
       </View>
     </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
     <Modal animationType="slide" onRequestClose={() => setRulesModalPresetId(null)} transparent visible={Boolean(rulesModalPreset)}>
       <View style={styles.rulesOverlay}>
         <View style={[styles.rulesSheet, { backgroundColor: theme.colors.screen }]}>
@@ -682,68 +676,23 @@ const styles = StyleSheet.create({
   },
   brandRow: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    alignItems: 'flex-start',
   },
-  headerText: {
-    flex: 1,
-    gap: 2,
-  },
-  logoMark: {
-    width: 44,
-    height: 44,
+  wordmarkCard: {
+    width: 238,
+    height: 82,
     borderRadius: 10,
     backgroundColor: '#FFFFFF',
-    padding: 5,
-    justifyContent: 'space-between',
+    overflow: 'hidden',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 3,
   },
-  logoBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoInitial: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  logoBarsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'flex-end',
-    gap: 3,
-  },
-  logoBarTall: {
-    width: 6,
-    height: 20,
-    borderRadius: 3,
-    backgroundColor: '#F4D35E',
-  },
-  logoBarMedium: {
-    width: 6,
-    height: 15,
-    borderRadius: 3,
-    backgroundColor: '#73D2DE',
-  },
-  logoBarShort: {
-    width: 6,
-    height: 10,
-    borderRadius: 3,
-    backgroundColor: '#F95738',
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: 23,
-    fontWeight: '900',
-    lineHeight: 27,
+  wordmarkImage: {
+    width: '100%',
+    height: '100%',
   },
   kicker: {
     color: '#66E3D2',

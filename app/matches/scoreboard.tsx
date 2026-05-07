@@ -1,6 +1,6 @@
 import { useFocusEffect, router, useLocalSearchParams, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import { getGamePreset } from '@/features/matches/gamePresets';
@@ -11,6 +11,7 @@ import { clearRoundDraft, getRoundDraft, saveRoundDraft } from '@/features/match
 import { getScoringPreset, getScoringRule, getScoringRuleSummary, isLowerScoreBetter, modeNeedsTarget } from '@/features/matches/scoringRules';
 import { getMatchInsights, getPlayerStandings, getTeamStandings, hasTeamScoring } from '@/features/matches/scoreCalculator';
 import { formatMatchShareText } from '@/features/matches/shareFormatter';
+import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
 import { useI18n } from '@/src/i18n';
 import type { Match, PlayerScore, PlayerStanding, Round } from '@/features/matches/types';
@@ -66,6 +67,7 @@ function formatDraftSavedLabel(updatedAt: string) {
 export default function ScoreboardScreen() {
   const theme = useScoreMateTheme();
   const { t } = useI18n();
+  const keyboardBottomInset = useKeyboardBottomInset();
   const { matchId } = useLocalSearchParams<{ matchId?: string }>();
   const [match, setMatch] = useState<Match | null>(null);
   const [scoresByPlayer, setScoresByPlayer] = useState<Record<string, string>>({});
@@ -408,14 +410,12 @@ export default function ScoreboardScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+    <View
       style={[styles.keyboardView, { backgroundColor: theme.colors.screen }]}>
       <ScrollView
         style={[styles.screen, { backgroundColor: theme.colors.screen }]}
-        contentContainerStyle={styles.container}
-        keyboardDismissMode="interactive"
+        contentContainerStyle={[styles.container, keyboardBottomInset > 0 && { paddingBottom: keyboardBottomInset + 26 }]}
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         keyboardShouldPersistTaps="handled">
       <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
         <View style={styles.heroTopRow}>
@@ -797,7 +797,7 @@ export default function ScoreboardScreen() {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

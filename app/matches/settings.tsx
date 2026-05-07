@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { customGamePresetId, getGamePreset, getGamePresetsByCategory, type GamePreset } from '@/features/matches/gamePresets';
 import { createId } from '@/features/matches/matchFactory';
@@ -8,6 +8,7 @@ import { getMatch, saveMatch } from '@/features/matches/matchStorage';
 import { savePlayerNames } from '@/features/matches/playerStorage';
 import { DEFAULT_OUT_LIMIT, createScoringRule, getScoringPreset, getScoringRule, modeNeedsTarget, scoringPresets } from '@/features/matches/scoringRules';
 import type { Match, Player, Round, ScoringMode } from '@/features/matches/types';
+import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
 import { useI18n } from '@/src/i18n';
 
@@ -42,6 +43,7 @@ function normalizeName(name: string) {
 export default function MatchSettingsScreen() {
   const theme = useScoreMateTheme();
   const { t } = useI18n();
+  const keyboardBottomInset = useKeyboardBottomInset();
   const { matchId } = useLocalSearchParams<{ matchId?: string }>();
   const [match, setMatch] = useState<Match | null>(null);
   const [matchName, setMatchName] = useState('');
@@ -274,14 +276,12 @@ export default function MatchSettingsScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+    <View
       style={[styles.keyboardView, { backgroundColor: theme.colors.screen }]}>
       <ScrollView
         style={[styles.screen, { backgroundColor: theme.colors.screen }]}
-        contentContainerStyle={styles.container}
-        keyboardDismissMode="interactive"
+        contentContainerStyle={[styles.container, keyboardBottomInset > 0 && { paddingBottom: keyboardBottomInset + 32 }]}
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         keyboardShouldPersistTaps="handled">
         <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
           <Text style={[styles.kicker, { color: theme.colors.accent }]}>Match setup</Text>
@@ -488,7 +488,7 @@ export default function MatchSettingsScreen() {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

@@ -1,6 +1,6 @@
 import { router, type Href, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import {
   customGamePresetId,
@@ -16,6 +16,7 @@ import { createId } from '@/features/matches/matchFactory';
 import { getMatches, saveMatch } from '@/features/matches/matchStorage';
 import { clearSavedPlayers, deleteSavedPlayer, getSavedPlayers, savePlayerNames } from '@/features/matches/playerStorage';
 import { DEFAULT_OUT_LIMIT, createScoringRule, getScoringPreset, modeNeedsTarget, scoringPresets } from '@/features/matches/scoringRules';
+import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
 import { useI18n } from '@/src/i18n';
 import type { Match, Player, SavedPlayer, ScoringMode } from '@/features/matches/types';
@@ -81,6 +82,7 @@ function getFirstParam(value: string | string[] | undefined) {
 export default function CreateMatchScreen() {
   const theme = useScoreMateTheme();
   const { t } = useI18n();
+  const keyboardBottomInset = useKeyboardBottomInset();
   const params = useLocalSearchParams();
   const playerNameInputRef = useRef<TextInput>(null);
   const requestedGamePresetId = getFirstParam(params.gamePresetId);
@@ -419,14 +421,12 @@ export default function CreateMatchScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+    <View
       style={[styles.keyboardView, { backgroundColor: theme.colors.screen }]}>
       <ScrollView
         style={[styles.screen, { backgroundColor: theme.colors.screen }]}
-        contentContainerStyle={styles.container}
-        keyboardDismissMode="interactive"
+        contentContainerStyle={[styles.container, keyboardBottomInset > 0 && { paddingBottom: keyboardBottomInset + 26 }]}
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         keyboardShouldPersistTaps="handled">
       <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
         <Text style={styles.title}>{t('createMatch')}</Text>
@@ -853,7 +853,7 @@ export default function CreateMatchScreen() {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
