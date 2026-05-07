@@ -1,22 +1,15 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { getMatch, updateRound } from '@/features/matches/matchStorage';
+import { applyScoreSign, normalizeScoreInput, parseScoreInput } from '@/features/matches/scoreInput';
 import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import type { Match, PlayerScore, Round } from '@/features/matches/types';
 
-function parseScore(value: string) {
-  if (value.trim() === '') {
-    return 0;
-  }
-
-  const score = Number(value);
-  return Number.isFinite(score) && score >= 0 ? score : null;
-}
-
 export default function EditRoundScreen() {
   const keyboardBottomInset = useKeyboardBottomInset();
+  const scoreSignTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { matchId, roundId } = useLocalSearchParams<{ matchId?: string; roundId?: string }>();
   const [match, setMatch] = useState<Match | null>(null);
   const [round, setRound] = useState<Round | null>(null);
@@ -56,10 +49,10 @@ export default function EditRoundScreen() {
     const updatedScores: PlayerScore[] = [];
 
     for (const player of roundPlayers) {
-      const parsedScore = parseScore(scoresByPlayer[player.id] ?? '');
+      const parsedScore = parseScoreInput(scoresByPlayer[player.id] ?? '');
 
       if (parsedScore === null) {
-        Alert.alert('Invalid score', `${player.name}'s score must be a number greater than or equal to 0.`);
+        Alert.alert('Invalid score', `${player.name}'s score must be a valid number.`);
         return;
       }
 
@@ -75,6 +68,37 @@ export default function EditRoundScreen() {
     });
     router.back();
   }
+
+  function markScoreNegative(playerId: string) {
+    clearScoreSignPress();
+    setScoresByPlayer((currentScores) => ({
+      ...currentScores,
+      [playerId]: applyScoreSign(currentScores[playerId] ?? '', 'negative'),
+    }));
+  }
+
+  function clearScoreSignPress() {
+    if (scoreSignTimerRef.current) {
+      clearTimeout(scoreSignTimerRef.current);
+      scoreSignTimerRef.current = null;
+    }
+  }
+
+  function startScoreSignPress(playerId: string) {
+    clearScoreSignPress();
+    scoreSignTimerRef.current = setTimeout(() => {
+      scoreSignTimerRef.current = null;
+      markScoreNegative(playerId);
+    }, 520);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (scoreSignTimerRef.current) {
+        clearTimeout(scoreSignTimerRef.current);
+      }
+    };
+  }, []);
 
   if (!match || !round) {
     return (
@@ -95,29 +119,39 @@ export default function EditRoundScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Edit round</Text>
         <Text style={styles.subtitle}>{match.name}</Text>
+        <Text style={styles.helperTip}>Tip: Hold a score to enter a negative value.</Text>
       </View>
 
       <View style={styles.scoreList}>
         {roundPlayers.map((player) => (
-          <View key={player.id} style={styles.scoreCard}>
+          <Pressable
+            accessibilityHint="Long press to enter this score as a negative value."
+            accessibilityRole="button"
+            delayLongPress={520}
+            key={player.id}
+            onLongPress={() => markScoreNegative(player.id)}
+            style={({ pressed }) => [styles.scoreCard, pressed && styles.pressed]}>
             <View style={styles.playerInfo}>
               <Text style={styles.playerName}>{player.name}</Text>
               <Text style={styles.playerMeta}>Round score</Text>
             </View>
             <TextInput
+              contextMenuHidden
               keyboardType="number-pad"
               onChangeText={(value) =>
                 setScoresByPlayer((currentScores) => ({
                   ...currentScores,
-                  [player.id]: value,
+                  [player.id]: normalizeScoreInput(value, currentScores[player.id] ?? ''),
                 }))
               }
+              onPressIn={() => startScoreSignPress(player.id)}
+              onPressOut={clearScoreSignPress}
               placeholder="0"
               placeholderTextColor="#94A3B8"
               style={styles.scoreInput}
               value={scoresByPlayer[player.id] ?? ''}
             />
-          </View>
+          </Pressable>
         ))}
       </View>
 
@@ -163,6 +197,12 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 14,
     lineHeight: 20,
+  },
+  helperTip: {
+    color: '#475569',
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 17,
   },
   scoreList: {
     gap: 12,

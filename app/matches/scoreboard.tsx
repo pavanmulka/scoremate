@@ -1,5 +1,5 @@
 import { useFocusEffect, router, useLocalSearchParams, type Href } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
@@ -10,20 +10,12 @@ import { savePlayerNames } from '@/features/matches/playerStorage';
 import { clearRoundDraft, getRoundDraft, saveRoundDraft } from '@/features/matches/roundDraftStorage';
 import { getScoringPreset, getScoringRule, getScoringRuleSummary, isLowerScoreBetter, modeNeedsTarget } from '@/features/matches/scoringRules';
 import { getMatchInsights, getPlayerStandings, getTeamStandings, hasTeamScoring } from '@/features/matches/scoreCalculator';
+import { applyScoreSign, normalizeScoreInput, parseScoreInput } from '@/features/matches/scoreInput';
 import { formatMatchShareText } from '@/features/matches/shareFormatter';
 import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
 import { useI18n } from '@/src/i18n';
 import type { Match, PlayerScore, PlayerStanding, Round } from '@/features/matches/types';
-
-function parseScore(value: string) {
-  if (value.trim() === '') {
-    return 0;
-  }
-
-  const score = Number(value);
-  return Number.isFinite(score) && score >= 0 ? score : null;
-}
 
 function formatRoundScore(match: Match, round: Round) {
   return match.players
@@ -68,6 +60,7 @@ export default function ScoreboardScreen() {
   const theme = useScoreMateTheme();
   const { t } = useI18n();
   const keyboardBottomInset = useKeyboardBottomInset();
+  const scoreSignTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { matchId } = useLocalSearchParams<{ matchId?: string }>();
   const [match, setMatch] = useState<Match | null>(null);
   const [scoresByPlayer, setScoresByPlayer] = useState<Record<string, string>>({});
@@ -129,6 +122,14 @@ export default function ScoreboardScreen() {
     };
   }, [isRoundDraftHydrated, match, matchId, scoresByPlayer, selectedPlayerId]);
 
+  useEffect(() => {
+    return () => {
+      if (scoreSignTimerRef.current) {
+        clearTimeout(scoreSignTimerRef.current);
+      }
+    };
+  }, []);
+
   async function handleDeleteRound(roundId: string) {
     if (!matchId) {
       return;
@@ -173,10 +174,10 @@ export default function ScoreboardScreen() {
     const roundScores: PlayerScore[] = [];
 
     for (const standing of activeStandings) {
-      const parsedScore = parseScore(scoresByPlayer[standing.player.id] ?? '');
+      const parsedScore = parseScoreInput(scoresByPlayer[standing.player.id] ?? '');
 
       if (parsedScore === null) {
-        Alert.alert('Invalid score', `${standing.player.name}'s score must be a number greater than or equal to 0.`);
+        Alert.alert('Invalid score', `${standing.player.name}'s score must be a valid number.`);
         return;
       }
 
@@ -337,12 +338,36 @@ export default function ScoreboardScreen() {
   }
 
   function handleScoreChange(playerId: string, score: string) {
-    const numericScore = score.replace(/\D/g, '').slice(0, 5);
     setScoresByPlayer((currentScores) => ({
       ...currentScores,
-      [playerId]: numericScore,
+      [playerId]: normalizeScoreInput(score, currentScores[playerId] ?? ''),
     }));
     setSelectedPlayerId(playerId);
+  }
+
+  function markScoreNegative(playerId: string) {
+    clearScoreSignPress();
+    setScoresByPlayer((currentScores) => ({
+      ...currentScores,
+      [playerId]: applyScoreSign(currentScores[playerId] ?? '', 'negative'),
+    }));
+    setSelectedPlayerId(playerId);
+  }
+
+  function clearScoreSignPress() {
+    if (scoreSignTimerRef.current) {
+      clearTimeout(scoreSignTimerRef.current);
+      scoreSignTimerRef.current = null;
+    }
+  }
+
+  function startScoreSignPress(playerId: string) {
+    clearScoreSignPress();
+    setSelectedPlayerId(playerId);
+    scoreSignTimerRef.current = setTimeout(() => {
+      scoreSignTimerRef.current = null;
+      markScoreNegative(playerId);
+    }, 520);
   }
 
   if (!match || !matchId) {
@@ -375,37 +400,65 @@ export default function ScoreboardScreen() {
   const teamScoreRows = Array.from(new Set(match.players.map((player) => player.teamName).filter((teamName): teamName is string => Boolean(teamName)))).map((teamName) => {
     const teamStanding = teamStandings.find((team) => team.teamName === teamName);
     const playerStandings = standings.filter((standing) => standing.player.teamName === teamName);
+    const previewTotal = playerStandings.reduce((total, standing) => total + getPreviewTotal(standing), 0);
 
     return {
       teamName,
       total: teamStanding?.total ?? playerStandings.reduce((total, standing) => total + standing.total, 0),
+      previewTotal,
       isLeader: Boolean(teamStanding?.isLeader),
       players: playerStandings,
     };
   });
 
+  function getPendingScore(playerId: string) {
+    return parseScoreInput(scoresByPlayer[playerId] ?? '') ?? 0;
+  }
+
+  function getPreviewTotal(standing: PlayerStanding) {
+    return standing.isOut || isCompleted ? standing.total : standing.total + getPendingScore(standing.player.id);
+  }
+
   function renderScoreEntryCell(standing: PlayerStanding) {
     const isSelected = selectedPlayerId === standing.player.id;
+    const previewTotal = getPreviewTotal(standing);
+    const totalLabel = `Total ${previewTotal}`;
 
     return (
-      <View key={standing.player.id} style={[styles.scoreEntryCard, isSelected && styles.selectedEntryCard, standing.isOut && styles.disabledEntryCard]}>
+      <Pressable
+        accessibilityHint="Long press to enter this score as a negative value."
+        accessibilityRole="button"
+        delayLongPress={520}
+        disabled={standing.isOut}
+        key={standing.player.id}
+        onLongPress={() => markScoreNegative(standing.player.id)}
+        onPress={() => handleSelectPlayer(standing.player.id)}
+        style={({ pressed }) => [
+          styles.scoreEntryCard,
+          isSelected && styles.selectedEntryCard,
+          standing.isOut && styles.disabledEntryCard,
+          pressed && !standing.isOut && styles.pressed,
+        ]}>
         <View style={styles.scoreEntryCardTop}>
           <View style={styles.scoreEntryPlayer}>
             <Text numberOfLines={1} style={[styles.scoreEntryName, standing.isOut && styles.disabledText]}>{standing.player.name}</Text>
-            <Text style={[styles.scoreEntryMeta, standing.isOut && styles.disabledText]}>{standing.isOut ? 'Out' : `Total ${standing.total}`}</Text>
+            <Text style={[styles.scoreEntryMeta, standing.isOut && styles.disabledText]}>{standing.isOut ? 'Out' : totalLabel}</Text>
           </View>
           <TextInput
+            contextMenuHidden
             editable={!standing.isOut}
             keyboardType="number-pad"
             onChangeText={(score) => handleScoreChange(standing.player.id, score)}
             onFocus={() => handleSelectPlayer(standing.player.id)}
+            onPressIn={() => startScoreSignPress(standing.player.id)}
+            onPressOut={clearScoreSignPress}
             placeholder="0"
             placeholderTextColor="#94A3B8"
             style={[styles.scoreInput, isSelected && styles.selectedScoreInput, standing.isOut && styles.disabledInput]}
             value={scoresByPlayer[standing.player.id] ?? ''}
           />
         </View>
-      </View>
+      </Pressable>
     );
   }
 
@@ -521,6 +574,7 @@ export default function ScoreboardScreen() {
             <Text style={styles.entryHint}>Enter each active player score. Empty scores save as 0.</Text>
             {draftSavedAt ? <Text style={styles.draftSavedText}>{formatDraftSavedLabel(draftSavedAt)}</Text> : null}
           </View>
+          <Text style={styles.scoreTipText}>Tip: Hold a score to enter a negative value.</Text>
 
           {isTeamMatch ? (
             <View style={styles.teamEntryList}>
@@ -531,7 +585,7 @@ export default function ScoreboardScreen() {
                       <Text style={styles.teamEntryName}>{team.teamName}</Text>
                       <Text style={styles.teamEntryMeta}>{team.isLeader ? 'Leader' : `${team.players.length} players`}</Text>
                     </View>
-                    <Text style={styles.teamEntryTotal}>{team.total}</Text>
+                    <Text style={styles.teamEntryTotal}>{team.previewTotal}</Text>
                   </View>
                   <View style={styles.scoreEntryGrid}>{team.players.map((standing) => renderScoreEntryCell(standing))}</View>
                 </View>
@@ -572,7 +626,7 @@ export default function ScoreboardScreen() {
                     {team.players.length} players{team.isLeader ? ' - Leader' : ''}
                   </Text>
                 </View>
-                <Text style={styles.teamScoreTotal}>{team.total}</Text>
+                <Text style={styles.teamScoreTotal}>{team.previewTotal}</Text>
               </View>
               <View style={styles.teamScoreSlots}>
                 {team.players.map((standing) => (
@@ -580,7 +634,7 @@ export default function ScoreboardScreen() {
                     <Text style={[styles.teamScorePlayerName, standing.isOut && styles.teamScorePlayerNameOut]} numberOfLines={1}>
                       {standing.player.name}
                     </Text>
-                    <Text style={[styles.teamScorePlayerTotal, standing.isOut && styles.teamScorePlayerNameOut]}>{standing.total}</Text>
+                    <Text style={[styles.teamScorePlayerTotal, standing.isOut && styles.teamScorePlayerNameOut]}>{getPreviewTotal(standing)}</Text>
                   </View>
                 ))}
               </View>
@@ -600,7 +654,7 @@ export default function ScoreboardScreen() {
                   </Text>
                 </View>
               </View>
-              <Text style={styles.totalScore}>{standing.total}</Text>
+              <Text style={styles.totalScore}>{getPreviewTotal(standing)}</Text>
             </View>
           ))}
         </View>
@@ -1287,6 +1341,11 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 12,
     lineHeight: 17,
+  },
+  scoreTipText: {
+    color: '#475569',
+    fontSize: 11,
+    fontWeight: '800',
   },
   draftSavedText: {
     color: '#0F766E',
