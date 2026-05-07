@@ -1,5 +1,5 @@
 import { router, useFocusEffect, type Href } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -19,10 +19,38 @@ import { savePlayerNames } from '@/features/matches/playerStorage';
 import { getScoringPreset, getScoringRuleSummary, scoringPresets } from '@/features/matches/scoringRules';
 import { getPlayerStandings } from '@/features/matches/scoreCalculator';
 import { formatMatchShareText } from '@/features/matches/shareFormatter';
+import { getHasSeenWelcome, markWelcomeSeen } from '@/features/matches/welcomeStorage';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
 import type { Match, ScoringMode } from '@/features/matches/types';
 
 const matchFilters = ['all', 'live', 'completed'] as const;
+
+const welcomeFeatures: {
+  title: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  {
+    title: 'Many games',
+    description: 'Choose presets or use Custom Scorekeeper',
+    icon: 'apps-outline',
+  },
+  {
+    title: 'Game rules',
+    description: 'View quick rules when needed',
+    icon: 'book-outline',
+  },
+  {
+    title: 'Players or teams',
+    description: 'Score individuals or team games',
+    icon: 'people-outline',
+  },
+  {
+    title: 'Offline history',
+    description: 'Matches stay on this phone',
+    icon: 'phone-portrait-outline',
+  },
+];
 
 type MatchFilter = (typeof matchFilters)[number];
 
@@ -56,6 +84,27 @@ export default function HomeScreen() {
   const [isRecentMatchesOpen, setIsRecentMatchesOpen] = useState(false);
   const [selectedGameCategory, setSelectedGameCategory] = useState<GamePresetCategoryFilter>('All');
   const [rulesModalPresetId, setRulesModalPresetId] = useState<string | null>(null);
+  const [isWelcomeVisible, setIsWelcomeVisible] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    getHasSeenWelcome()
+      .then((hasSeenWelcome) => {
+        if (isActive && !hasSeenWelcome) {
+          setIsWelcomeVisible(true);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setIsWelcomeVisible(true);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -160,6 +209,14 @@ export default function HomeScreen() {
     router.push(`/matches/scoreboard?matchId=${encodeURIComponent(savedMatch.id)}` as Href);
   }
 
+  async function handleDismissWelcome() {
+    try {
+      await markWelcomeSeen();
+    } finally {
+      setIsWelcomeVisible(false);
+    }
+  }
+
   return (
     <>
     <KeyboardAvoidingView
@@ -234,7 +291,7 @@ export default function HomeScreen() {
           ]}>
           <View style={styles.quickSelectorText}>
             <Text style={styles.quickSelectorLabel}>Select game</Text>
-            <Text numberOfLines={1} style={styles.quickSelectorValue}>{selectedGamePreset?.title ?? 'Generic scorekeeper'}</Text>
+            <Text numberOfLines={1} style={styles.quickSelectorValue}>{selectedGamePreset?.title ?? 'Custom Scorekeeper'}</Text>
           </View>
           <View style={styles.quickSelectorActions}>
             {selectedGamePreset ? (
@@ -280,7 +337,7 @@ export default function HomeScreen() {
                   pressed && styles.pressed,
                 ]}>
                 <View style={styles.quickOptionText}>
-                  <Text style={[styles.quickOptionTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Generic scorekeeper</Text>
+                  <Text style={[styles.quickOptionTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Custom Scorekeeper</Text>
                   <Text style={[styles.quickOptionDescription, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Works for any manual score game.</Text>
                 </View>
                 <Text style={[styles.quickOptionMeta, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Default</Text>
@@ -362,20 +419,21 @@ export default function HomeScreen() {
 
       </View>
 
-      {matches.length === 0 ? (
-        <View style={[styles.firstMatchCard, { backgroundColor: theme.colors.cardTint, borderColor: theme.colors.border }]}>
-          <View style={styles.firstMatchTextBlock}>
-            <Text style={styles.firstMatchTitle}>Create your first match in seconds.</Text>
-            <Text style={[styles.firstMatchText, { color: theme.colors.secondaryText }]}>Choose a game, add players, and start scoring offline.</Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push(createMatchHref)}
-            style={({ pressed }) => [styles.firstMatchButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.firstMatchButtonText}>Start New Match</Text>
-          </Pressable>
+      <View style={styles.capabilityCard}>
+        <View style={styles.capabilityHeader}>
+          <Text style={styles.capabilityTitle}>What you can do</Text>
         </View>
-      ) : null}
+        <View style={styles.capabilityGrid}>
+          {welcomeFeatures.map((feature) => (
+            <View key={feature.title} style={styles.capabilityItem}>
+              <View style={[styles.capabilityIcon, { backgroundColor: theme.colors.cardTint }]}>
+                <Ionicons name={feature.icon} size={15} color={theme.colors.primaryShadow} />
+              </View>
+              <Text style={styles.capabilityItemText}>{feature.title}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
 
       <View style={styles.recentSectionCard}>
         <Pressable
@@ -543,6 +601,41 @@ export default function HomeScreen() {
               </Pressable>
             </ScrollView>
           ) : null}
+        </View>
+      </View>
+    </Modal>
+    <Modal animationType="fade" onRequestClose={handleDismissWelcome} transparent visible={isWelcomeVisible}>
+      <View style={styles.welcomeOverlay}>
+        <View style={styles.welcomeCard}>
+          <View style={styles.welcomeHeroIcon}>
+            <Ionicons name="trophy-outline" size={24} color="#FFFFFF" />
+          </View>
+          <Text style={styles.welcomeTitle}>Welcome to ScoreMate</Text>
+          <Text style={styles.welcomeSubtitle}>
+            Track scores for cards, board games, sports, and group games — no login or internet needed.
+          </Text>
+          <View style={styles.welcomeFeatureList}>
+            {welcomeFeatures.map((feature) => (
+              <View key={feature.title} style={styles.welcomeFeatureRow}>
+                <View style={[styles.welcomeFeatureIcon, { backgroundColor: theme.colors.cardTint }]}>
+                  <Ionicons name={feature.icon} size={17} color={theme.colors.primaryShadow} />
+                </View>
+                <View style={styles.welcomeFeatureText}>
+                  <Text style={styles.welcomeFeatureTitle}>{feature.title}</Text>
+                  <Text style={styles.welcomeFeatureDescription}>{feature.description}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleDismissWelcome}
+            style={({ pressed }) => [styles.welcomePrimaryButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
+            <Text style={styles.welcomePrimaryButtonText}>Start scoring</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={handleDismissWelcome} style={({ pressed }) => [styles.welcomeSecondaryButton, pressed && styles.pressed]}>
+            <Text style={styles.welcomeSecondaryButtonText}>Maybe later</Text>
+          </Pressable>
         </View>
       </View>
     </Modal>
@@ -886,42 +979,56 @@ const styles = StyleSheet.create({
     flex: 0,
     minHeight: 50,
   },
-  firstMatchCard: {
-    gap: 10,
+  capabilityCard: {
+    gap: 9,
     borderRadius: 8,
-    borderWidth: 1,
-    backgroundColor: '#FFF7ED',
-    padding: 12,
+    backgroundColor: '#FFFFFF',
+    padding: 10,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
     elevation: 2,
   },
-  firstMatchTextBlock: {
-    gap: 3,
+  capabilityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  firstMatchTitle: {
+  capabilityTitle: {
     color: '#111827',
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '900',
   },
-  firstMatchText: {
-    color: '#64748B',
-    fontSize: 12,
-    fontWeight: '800',
-    lineHeight: 17,
+  capabilityGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 7,
   },
-  firstMatchButton: {
-    minHeight: 42,
+  capabilityItem: {
+    flexGrow: 1,
+    flexBasis: '47%',
+    minHeight: 38,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 8,
+  },
+  capabilityIcon: {
+    width: 26,
+    height: 26,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F97316',
   },
-  firstMatchButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+  capabilityItemText: {
+    flex: 1,
+    color: '#334155',
+    fontSize: 12,
     fontWeight: '900',
   },
   continueCard: {
@@ -1448,6 +1555,104 @@ const styles = StyleSheet.create({
   rulesCloseButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: '900',
+  },
+  welcomeOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.52)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 18,
+  },
+  welcomeCard: {
+    width: '100%',
+    maxWidth: 430,
+    gap: 12,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 28,
+    elevation: 8,
+  },
+  welcomeHeroIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: '#111827',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeTitle: {
+    color: '#111827',
+    fontSize: 23,
+    fontWeight: '900',
+    lineHeight: 28,
+  },
+  welcomeSubtitle: {
+    color: '#64748B',
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  welcomeFeatureList: {
+    gap: 7,
+  },
+  welcomeFeatureRow: {
+    minHeight: 48,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    paddingHorizontal: 9,
+  },
+  welcomeFeatureIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeFeatureText: {
+    flex: 1,
+    gap: 2,
+  },
+  welcomeFeatureTitle: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  welcomeFeatureDescription: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  welcomePrimaryButton: {
+    minHeight: 46,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F97316',
+  },
+  welcomePrimaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  welcomeSecondaryButton: {
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  welcomeSecondaryButtonText: {
+    color: '#64748B',
+    fontSize: 13,
     fontWeight: '900',
   },
 });

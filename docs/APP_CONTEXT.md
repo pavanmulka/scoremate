@@ -6,6 +6,9 @@
 - No database server
 - No login
 - Uses local phone storage
+- First-time welcome popup explains the app and is saved locally after dismiss
+- Home is mobile-first: hero, Start New Match, What you can do, Recent matches
+- Recent matches are collapsed by default
 - Player stats are calculated from local match history
 - Unsaved round drafts are stored locally on the device
 - Team mode groups players locally for team totals
@@ -13,4 +16,6 @@
 - Themes are stored locally on the device
 - Game presets pre-fill generic scoring rules for common game styles
 - Game library uses category filters and short rules popups
+- Settings pages are store-safe and avoid visible Pro/payment/testing controls
+- Route headers should not expose Expo route groups like `(tabs)`
 - Future idea: add more games later

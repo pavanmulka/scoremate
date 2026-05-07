@@ -16,8 +16,8 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ fullScreenGestureEnabled: true, gestureEnabled: true }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack screenOptions={{ fullScreenGestureEnabled: true, gestureEnabled: true, headerBackTitle: 'Back' }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'ScoreMate' }} />
           <Stack.Screen name="matches/create" options={{ title: 'Create Match' }} />
           <Stack.Screen name="matches/scoreboard" options={{ title: 'Scoreboard' }} />
           <Stack.Screen name="matches/edit-round" options={{ title: 'Edit Round' }} />

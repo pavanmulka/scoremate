@@ -622,10 +622,10 @@ export default function ScoreboardScreen() {
               <View style={styles.roundCard}>
                 <View style={styles.roundHeader}>
                   <Text style={styles.roundTitle}>Round {roundNumber}</Text>
-                  <Text style={styles.roundHint}>{isCompleted ? 'Locked' : 'Edit or delete'}</Text>
+                  {isCompleted ? <Text style={styles.roundHint}>Locked</Text> : null}
                 </View>
-                <Text style={styles.roundScores}>{formatRoundScore(match, round)}</Text>
-                <Text style={styles.roundScanSummary}>{getRoundScanSummary(match, round)}</Text>
+                <Text numberOfLines={2} style={styles.roundScores}>{formatRoundScore(match, round)}</Text>
+                <Text numberOfLines={1} style={styles.roundScanSummary}>{getRoundScanSummary(match, round)}</Text>
                 {!isCompleted ? (
                   <View style={styles.roundInlineActions}>
                     <Pressable
@@ -981,15 +981,15 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   heroCard: {
-    gap: 7,
+    gap: 5,
     borderRadius: 8,
     backgroundColor: '#172033',
-    padding: 10,
+    padding: 8,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 4,
   },
   heroTopRow: {
     flexDirection: 'row',
@@ -1010,9 +1010,9 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     color: '#FFFFFF',
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: '900',
-    lineHeight: 26,
+    lineHeight: 24,
   },
   pillStack: {
     flexDirection: 'row',
@@ -1021,8 +1021,8 @@ const styles = StyleSheet.create({
   },
   statusPill: {
     borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
   livePill: {
     backgroundColor: '#D9F9F3',
@@ -1031,7 +1031,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
   },
   statusPillText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '900',
   },
   livePillText: {
@@ -1043,12 +1043,12 @@ const styles = StyleSheet.create({
   roundPill: {
     borderRadius: 999,
     backgroundColor: '#29354A',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
   roundPillText: {
     color: '#DDE6F3',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
   },
   limitPanel: {
@@ -1058,7 +1058,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 6,
-    padding: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   limitTextBlock: {
     flex: 1,
@@ -1072,9 +1073,9 @@ const styles = StyleSheet.create({
   },
   limitValue: {
     color: '#111827',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '900',
-    lineHeight: 19,
+    lineHeight: 18,
   },
   limitRuleText: {
     color: '#64748B',
@@ -1100,8 +1101,8 @@ const styles = StyleSheet.create({
   editLimitButton: {
     borderRadius: 8,
     backgroundColor: '#FFE8D7',
-    paddingHorizontal: 9,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   editLimitButtonText: {
     color: '#C2410C',
@@ -1132,8 +1133,8 @@ const styles = StyleSheet.create({
   },
   summaryButton: {
     flex: 1,
-    minWidth: 68,
-    minHeight: 34,
+    minWidth: 58,
+    minHeight: 30,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1141,18 +1142,18 @@ const styles = StyleSheet.create({
   },
   summaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
   },
   heroActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 5,
   },
   playAgainButton: {
     flex: 1,
-    minWidth: 68,
-    minHeight: 34,
+    minWidth: 58,
+    minHeight: 30,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1160,13 +1161,13 @@ const styles = StyleSheet.create({
   },
   playAgainButtonText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
   },
   reopenButton: {
     flex: 1,
-    minWidth: 68,
-    minHeight: 34,
+    minWidth: 64,
+    minHeight: 30,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1174,13 +1175,13 @@ const styles = StyleSheet.create({
   },
   reopenButtonText: {
     color: '#1D4ED8',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
   },
   shareButton: {
     flex: 1,
-    minWidth: 60,
-    minHeight: 34,
+    minWidth: 56,
+    minHeight: 30,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1188,13 +1189,13 @@ const styles = StyleSheet.create({
   },
   shareButtonText: {
     color: '#0369A1',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
   },
   settingsButton: {
     flex: 1,
-    minWidth: 72,
-    minHeight: 34,
+    minWidth: 64,
+    minHeight: 30,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1202,19 +1203,19 @@ const styles = StyleSheet.create({
   },
   settingsButtonText: {
     color: '#334155',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
   },
   ruleSummaryPill: {
     alignSelf: 'center',
     borderRadius: 999,
     backgroundColor: '#29354A',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
   ruleSummaryPillText: {
     color: '#DDE6F3',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
   },
   winnerBanner: {
@@ -1260,22 +1261,24 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   entryCard: {
-    gap: 10,
+    gap: 9,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 12,
+    borderWidth: 1,
+    borderColor: '#D8F3EA',
+    padding: 10,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
   },
   entryHeader: {
     gap: 3,
   },
   entryTitle: {
     color: '#111827',
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '900',
   },
   entryHint: {
@@ -1341,14 +1344,14 @@ const styles = StyleSheet.create({
   scoreEntryCard: {
     flexGrow: 1,
     flexBasis: '47%',
-    minWidth: 132,
-    minHeight: 50,
+    minWidth: 138,
+    minHeight: 62,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    backgroundColor: '#F3F7FB',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
-    padding: 7,
+    padding: 8,
   },
   selectedEntryCard: {
     backgroundColor: '#E0F2FE',
@@ -1361,7 +1364,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 7,
+    gap: 8,
   },
   scoreEntryPlayer: {
     flex: 1,
@@ -1370,8 +1373,8 @@ const styles = StyleSheet.create({
   },
   scoreEntryName: {
     color: '#111827',
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '900',
   },
   scoreEntryMeta: {
     color: '#64748B',
@@ -1408,14 +1411,14 @@ const styles = StyleSheet.create({
     color: '#0369A1',
   },
   scoreInput: {
-    width: 58,
-    minHeight: 38,
+    width: 72,
+    minHeight: 48,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#D8DEE8',
     backgroundColor: '#FFFFFF',
     color: '#111827',
-    fontSize: 18,
+    fontSize: 23,
     fontWeight: '900',
     textAlign: 'center',
   },
@@ -1430,12 +1433,12 @@ const styles = StyleSheet.create({
   },
   roundActionRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 7,
   },
   clearDraftButton: {
-    flex: 1,
-    minWidth: 80,
-    minHeight: 42,
+    flex: 0.9,
+    minWidth: 68,
+    minHeight: 40,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1463,9 +1466,9 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   undoButton: {
-    flex: 1,
-    minWidth: 80,
-    minHeight: 42,
+    flex: 0.9,
+    minWidth: 68,
+    minHeight: 40,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1483,8 +1486,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#111827',
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 17,
+    fontWeight: '900',
   },
   standingsList: {
     flexDirection: 'row',
@@ -1492,7 +1495,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   teamScoreTable: {
-    gap: 8,
+    gap: 7,
   },
   teamScoreRow: {
     borderRadius: 8,
@@ -1510,7 +1513,7 @@ const styles = StyleSheet.create({
     borderColor: '#14B8A6',
   },
   teamScoreHeader: {
-    minHeight: 40,
+    minHeight: 34,
     backgroundColor: '#111827',
     flexDirection: 'row',
     alignItems: 'center',
@@ -1527,30 +1530,30 @@ const styles = StyleSheet.create({
   },
   teamScoreName: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '900',
   },
   teamScoreMeta: {
     color: '#CBD5E1',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
   },
   teamScoreTotal: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: '900',
   },
   teamScoreSlots: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    padding: 8,
+    gap: 5,
+    padding: 7,
   },
   teamScorePlayerCell: {
     flexGrow: 1,
     flexBasis: '30%',
     minWidth: 92,
-    minHeight: 42,
+    minHeight: 36,
     borderRadius: 8,
     backgroundColor: '#E0F2FE',
     flexDirection: 'row',
@@ -1565,7 +1568,7 @@ const styles = StyleSheet.create({
   teamScorePlayerName: {
     flex: 1,
     color: '#0F172A',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
   },
   teamScorePlayerNameOut: {
@@ -1573,7 +1576,7 @@ const styles = StyleSheet.create({
   },
   teamScorePlayerTotal: {
     color: '#0369A1',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '900',
   },
   teamList: {
@@ -1628,14 +1631,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexBasis: '47%',
     minWidth: 150,
-    minHeight: 72,
+    minHeight: 62,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    padding: 10,
+    padding: 9,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -1644,12 +1647,12 @@ const styles = StyleSheet.create({
   },
   playerInfo: {
     flex: 1,
-    gap: 5,
+    gap: 4,
   },
   playerName: {
     color: '#111827',
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '900',
   },
   playerTeamName: {
     alignSelf: 'flex-start',
@@ -1660,14 +1663,14 @@ const styles = StyleSheet.create({
   },
   totalScore: {
     color: '#111827',
-    fontSize: 26,
+    fontSize: 23,
     fontWeight: '900',
   },
   statusChip: {
     alignSelf: 'flex-start',
     borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
   activeChip: {
     backgroundColor: '#D9F9F3',
@@ -1698,9 +1701,9 @@ const styles = StyleSheet.create({
     color: '#92400E',
   },
   primaryButton: {
-    flex: 1.35,
+    flex: 1.8,
     minWidth: 80,
-    minHeight: 48,
+    minHeight: 50,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1713,7 +1716,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '900',
   },
   emptyCard: {
@@ -1733,13 +1736,13 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   roundList: {
-    gap: 8,
+    gap: 7,
   },
   roundCard: {
-    gap: 8,
+    gap: 6,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 12,
+    padding: 10,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -1754,7 +1757,7 @@ const styles = StyleSheet.create({
   },
   roundTitle: {
     color: '#111827',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '900',
   },
   roundHint: {
@@ -1765,16 +1768,16 @@ const styles = StyleSheet.create({
   },
   roundInlineActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 7,
     marginTop: 2,
   },
   roundInlineEditButton: {
-    minHeight: 34,
+    minHeight: 30,
     borderRadius: 8,
     backgroundColor: '#E0F2FE',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
   },
   roundInlineEditText: {
     color: '#0369A1',
@@ -1782,12 +1785,12 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   roundInlineDeleteButton: {
-    minHeight: 34,
+    minHeight: 30,
     borderRadius: 8,
     backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
   },
   roundInlineDeleteText: {
     color: '#B91C1C',
@@ -1846,18 +1849,18 @@ const styles = StyleSheet.create({
   },
   roundScores: {
     color: '#475569',
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 17,
   },
   roundScanSummary: {
     alignSelf: 'flex-start',
     borderRadius: 999,
     backgroundColor: '#F1F5F9',
     color: '#334155',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
-    paddingHorizontal: 9,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   pressed: {
     opacity: 0.82,

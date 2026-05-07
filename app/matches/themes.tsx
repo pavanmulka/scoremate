@@ -88,10 +88,7 @@ export default function ThemesScreen() {
                 key={`${theme.id}-${color}-${index}`}
                 style={[
                   styles.previewBar,
-                  {
-                    backgroundColor: color,
-                    height: index === 0 ? 30 : index === 1 ? 23 : 16,
-                  },
+                  { backgroundColor: color, height: index === 0 ? 24 : index === 1 ? 18 : 12 },
                 ]}
               />
             ))}
@@ -116,9 +113,8 @@ export default function ThemesScreen() {
   return (
     <ScrollView style={[styles.screen, { backgroundColor: selectedTheme.colors.screen }]} contentContainerStyle={styles.container}>
       <View style={[styles.heroCard, { backgroundColor: selectedTheme.colors.hero }]}>
-        <Text style={[styles.kicker, { color: selectedTheme.colors.accent }]}>Appearance</Text>
         <Text style={styles.title}>Themes</Text>
-        <Text style={styles.subtitle}>Change the look of the main ScoreMate screens on this device.</Text>
+        <Text style={styles.subtitle}>Change the look of ScoreMate on this device.</Text>
       </View>
 
       {themeSections.map((section) => {
@@ -154,7 +150,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    gap: 12,
+    gap: 10,
     width: '100%',
     maxWidth: 760,
     alignSelf: 'center',
@@ -163,27 +159,21 @@ const styles = StyleSheet.create({
     paddingBottom: 26,
   },
   heroCard: {
-    gap: 5,
+    gap: 3,
     borderRadius: 8,
     backgroundColor: '#172033',
-    padding: 12,
+    padding: 10,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 5,
-  },
-  kicker: {
-    color: '#66E3D2',
-    fontSize: 12,
-    fontWeight: '900',
-    textTransform: 'uppercase',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 4,
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '900',
-    lineHeight: 29,
+    lineHeight: 27,
   },
   subtitle: {
     color: '#CBD5E1',
@@ -193,18 +183,18 @@ const styles = StyleSheet.create({
   themeList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 7,
   },
   sectionCard: {
-    gap: 8,
+    gap: 7,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 8,
+    padding: 7,
   },
   sectionToggle: {
-    minHeight: 46,
+    minHeight: 42,
     borderRadius: 8,
     backgroundColor: '#F8FAFC',
     flexDirection: 'row',
@@ -236,30 +226,30 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexBasis: '48%',
     minWidth: 150,
-    gap: 8,
+    gap: 6,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     backgroundColor: '#FFFFFF',
-    padding: 10,
+    padding: 8,
   },
   themeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 7,
   },
   themePreview: {
-    width: 42,
-    height: 42,
+    width: 36,
+    height: 36,
     borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'center',
-    gap: 3,
-    paddingBottom: 8,
+    gap: 2,
+    paddingBottom: 7,
   },
   previewBar: {
-    width: 5,
+    width: 4,
     borderRadius: 4,
   },
   themeTextBlock: {
@@ -268,7 +258,7 @@ const styles = StyleSheet.create({
   },
   themeName: {
     color: '#111827',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '900',
   },
   themeDescription: {
@@ -285,11 +275,11 @@ const styles = StyleSheet.create({
   },
   swatchRow: {
     flexDirection: 'row',
-    gap: 5,
+    gap: 4,
   },
   swatch: {
     flex: 1,
-    height: 8,
+    height: 6,
     borderRadius: 999,
   },
   pressed: {

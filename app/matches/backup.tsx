@@ -8,6 +8,7 @@ export default function BackupScreen() {
   const theme = useScoreMateTheme();
   const [backupText, setBackupText] = useState('');
   const [isWorking, setIsWorking] = useState(false);
+  const hasBackupText = backupText.trim().length > 0;
 
   async function handleExportBackup() {
     setIsWorking(true);
@@ -78,9 +79,8 @@ export default function BackupScreen() {
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled">
         <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
-          <Text style={[styles.kicker, { color: theme.colors.accent }]}>Local backup</Text>
           <Text style={styles.title}>Backup & Restore</Text>
-          <Text style={styles.subtitle}>Export matches and saved players as a plain JSON backup. No account or backend needed.</Text>
+          <Text style={styles.subtitle}>Export or restore local ScoreMate data. No login or cloud sync.</Text>
         </View>
 
         <View style={styles.card}>
@@ -97,7 +97,7 @@ export default function BackupScreen() {
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Restore backup</Text>
-          <Text style={styles.bodyText}>Paste a ScoreMate backup JSON below. Restoring replaces saved matches and quick-add players on this device.</Text>
+          <Text style={styles.bodyText}>Paste a ScoreMate backup JSON below. Restoring replaces saved matches and players on this device.</Text>
           <TextInput
             multiline
             onChangeText={setBackupText}
@@ -109,9 +109,9 @@ export default function BackupScreen() {
           />
           <Pressable
             accessibilityRole="button"
-            disabled={isWorking}
+            disabled={isWorking || !hasBackupText}
             onPress={handleRestoreBackup}
-            style={({ pressed }) => [styles.restoreButton, { backgroundColor: theme.colors.secondary }, isWorking && styles.disabledButton, pressed && styles.pressed]}>
+            style={({ pressed }) => [styles.restoreButton, !hasBackupText && styles.emptyRestoreButton, isWorking && styles.disabledButton, pressed && hasBackupText && styles.pressed]}>
             <Text style={[styles.restoreButtonText, { color: theme.colors.secondaryText }]}>Restore Backup</Text>
           </Pressable>
         </View>
@@ -135,62 +135,56 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    gap: 18,
+    gap: 10,
     width: '100%',
     maxWidth: 760,
     alignSelf: 'center',
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 32,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 26,
   },
   heroCard: {
-    gap: 8,
+    gap: 3,
     borderRadius: 8,
     backgroundColor: '#172033',
-    padding: 12,
+    padding: 10,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 5,
-  },
-  kicker: {
-    color: '#66E3D2',
-    fontSize: 12,
-    fontWeight: '900',
-    textTransform: 'uppercase',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 4,
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '900',
-    lineHeight: 29,
+    lineHeight: 27,
   },
   subtitle: {
     color: '#CBD5E1',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 19,
   },
   card: {
-    gap: 12,
+    gap: 9,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 14,
+    padding: 12,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
     elevation: 2,
   },
   sectionTitle: {
     color: '#111827',
-    fontSize: 21,
+    fontSize: 17,
     fontWeight: '900',
   },
   bodyText: {
     color: '#64748B',
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 13,
+    lineHeight: 18,
   },
   primaryButton: {
     minHeight: 44,
@@ -205,7 +199,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   backupInput: {
-    minHeight: 180,
+    minHeight: 132,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#CBD5E1',
@@ -213,10 +207,10 @@ const styles = StyleSheet.create({
     color: '#111827',
     fontSize: 14,
     lineHeight: 20,
-    padding: 14,
+    padding: 12,
   },
   restoreButton: {
-    minHeight: 54,
+    minHeight: 44,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -224,29 +218,33 @@ const styles = StyleSheet.create({
   },
   restoreButtonText: {
     color: '#1D4ED8',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '900',
+  },
+  emptyRestoreButton: {
+    backgroundColor: '#E8EEF5',
+    opacity: 0.72,
   },
   disabledButton: {
     opacity: 0.55,
   },
   infoCard: {
-    gap: 5,
+    gap: 4,
     borderRadius: 8,
     backgroundColor: '#FFF7ED',
     borderWidth: 1,
     borderColor: '#FDBA74',
-    padding: 16,
+    padding: 10,
   },
   infoTitle: {
     color: '#9A3412',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '900',
   },
   infoText: {
     color: '#C2410C',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 17,
   },
   pressed: {
     opacity: 0.82,

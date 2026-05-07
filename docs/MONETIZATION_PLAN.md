@@ -24,12 +24,12 @@
 - Local themes
 - Game presets for common scoring styles
 
-## Current Testing Approach
+## Current Public Testing Approach
 
-- Pro is simulated locally with the ScoreMate Pro screen.
-- Use "Enable Pro for testing" to unlock Pro behavior on the current device.
-- Use "Reset to Free" to test the free limit again.
-- This does not charge money and is not real app-store billing.
+- No visible Pro, payment, unlock, or testing controls in normal UI.
+- Existing Pro-style feature code can stay in place for future planning.
+- Public testing should focus on offline scoring, recent matches, themes, stats, backup/restore, and share/export.
+- Do not add real purchase UI until store billing is ready.
 
 ## Real Purchase Later
 

@@ -43,9 +43,8 @@ export default function PlayerStatsScreen() {
   return (
     <ScrollView style={[styles.screen, { backgroundColor: theme.colors.screen }]} contentContainerStyle={styles.container}>
       <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
-        <Text style={[styles.kicker, { color: theme.colors.accent }]}>Local history</Text>
         <Text style={styles.title}>Player Stats</Text>
-        <Text style={styles.subtitle}>Stats are calculated from matches saved on this phone.</Text>
+        <Text style={styles.subtitle}>Stats are calculated from matches on this phone.</Text>
       </View>
 
       <View style={styles.summaryGrid}>
@@ -133,62 +132,56 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    gap: 18,
+    gap: 10,
     width: '100%',
     maxWidth: 760,
     alignSelf: 'center',
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 32,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 26,
   },
   heroCard: {
-    gap: 8,
+    gap: 3,
     borderRadius: 8,
     backgroundColor: '#172033',
-    padding: 12,
+    padding: 10,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 5,
-  },
-  kicker: {
-    color: '#66E3D2',
-    fontSize: 12,
-    fontWeight: '900',
-    textTransform: 'uppercase',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 4,
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '900',
-    lineHeight: 29,
+    lineHeight: 27,
   },
   subtitle: {
     color: '#CBD5E1',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 19,
   },
   summaryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 7,
   },
   summaryCard: {
     flexGrow: 1,
     minWidth: '47%',
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 16,
+    padding: 10,
   },
   summaryValue: {
     color: '#111827',
-    fontSize: 24,
+    fontSize: 21,
     fontWeight: '900',
   },
   summaryLabel: {
     color: '#64748B',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
@@ -197,12 +190,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#111827',
-    fontSize: 21,
+    fontSize: 17,
     fontWeight: '900',
   },
   sectionHint: {
     color: '#64748B',
-    fontSize: 14,
+    fontSize: 12,
   },
   emptyCard: {
     gap: 12,
@@ -233,24 +226,24 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   statsList: {
-    gap: 12,
+    gap: 8,
   },
   playerCard: {
-    gap: 14,
+    gap: 9,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 16,
+    padding: 10,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.07,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
     elevation: 2,
   },
   playerHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 8,
   },
   playerTitleBlock: {
     flex: 1,
@@ -258,19 +251,19 @@ const styles = StyleSheet.create({
   },
   playerName: {
     color: '#111827',
-    fontSize: 21,
+    fontSize: 17,
     fontWeight: '900',
   },
   playerMeta: {
     color: '#64748B',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
   },
   winChip: {
     borderRadius: 999,
     backgroundColor: '#FEF3C7',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   winChipText: {
     color: '#92400E',
@@ -281,29 +274,29 @@ const styles = StyleSheet.create({
   metricGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   metricCard: {
     flexGrow: 1,
     minWidth: '47%',
     borderRadius: 8,
     backgroundColor: '#F3F7FB',
-    padding: 12,
+    padding: 8,
   },
   metricValue: {
     color: '#111827',
-    fontSize: 24,
+    fontSize: 19,
     fontWeight: '900',
   },
   metricLabel: {
     color: '#64748B',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
   savedText: {
     color: '#64748B',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '800',
   },
   pressed: {

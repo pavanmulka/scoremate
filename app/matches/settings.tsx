@@ -379,7 +379,7 @@ export default function MatchSettingsScreen() {
                 selectedGamePresetId === customGamePresetId && { backgroundColor: theme.colors.softAccent, borderColor: theme.colors.accent },
                 pressed && styles.pressed,
               ]}>
-              <Text style={[styles.optionTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Custom match</Text>
+              <Text style={[styles.optionTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Custom Scorekeeper</Text>
               <Text style={[styles.optionDescription, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>
                 Choose scoring style manually.
               </Text>

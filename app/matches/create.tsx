@@ -151,9 +151,9 @@ export default function CreateMatchScreen() {
   }, [teamMode, teamRows]);
   const playerInputPlaceholder = teamMode
     ? nextTeamSlot
-      ? `${nextTeamSlot.teamName} player ${nextTeamSlot.playerNumber}`
+      ? `Add ${nextTeamSlot.teamName} player ${nextTeamSlot.playerNumber}`
       : 'All team slots filled'
-    : 'Player name';
+    : 'Enter player name';
 
   useFocusEffect(
     useCallback(() => {
@@ -427,9 +427,8 @@ export default function CreateMatchScreen() {
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled">
       <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
-        <Text style={[styles.kicker, { color: theme.colors.accent }]}>New match</Text>
         <Text style={styles.title}>Create match</Text>
-        <Text style={styles.subtitle}>Add players and start. Game rules and scoring options are available when needed.</Text>
+        <Text style={styles.subtitle}>Choose a game, add players, and start scoring.</Text>
       </View>
 
       <View style={styles.card}>
@@ -439,13 +438,12 @@ export default function CreateMatchScreen() {
           onPress={() => setIsGameLibraryOpen((value) => !value)}
           style={({ pressed }) => [
             styles.compactSectionHeader,
-            { backgroundColor: theme.colors.cardTint, borderColor: theme.colors.border },
-            isGameLibraryOpen && { borderColor: theme.colors.primary },
+            isGameLibraryOpen && styles.compactSectionHeaderOpen,
             pressed && styles.pressed,
           ]}>
           <View style={styles.compactSectionText}>
             <Text style={styles.label}>Select game</Text>
-            <Text numberOfLines={1} style={styles.compactSectionHint}>{selectedGamePreset ? selectedGamePreset.title : 'Generic scorekeeper'}</Text>
+            <Text numberOfLines={1} style={styles.compactSectionHint}>{selectedGamePreset ? selectedGamePreset.title : 'Custom Scorekeeper'}</Text>
           </View>
           {selectedGamePreset ? (
             <Pressable accessibilityRole="button" onPress={() => setRulesModalPresetId(selectedGamePreset.id)} style={({ pressed }) => [styles.rulesButton, pressed && styles.pressed]}>
@@ -491,9 +489,9 @@ export default function CreateMatchScreen() {
                     selectedGamePresetId === customGamePresetId && { borderColor: theme.colors.accent, backgroundColor: theme.colors.softAccent },
                     pressed && styles.pressed,
                   ]}>
-                  <Text style={[styles.gamePresetTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Generic scorekeeper</Text>
+                  <Text style={[styles.gamePresetTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Custom Scorekeeper</Text>
                   <Text style={[styles.gamePresetDescription, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>
-                    Generic manual scoring. Highest score leads by default.
+                    Manual scoring for any game. Highest score leads by default.
                   </Text>
                 </Pressable>
               ) : null}
@@ -539,8 +537,7 @@ export default function CreateMatchScreen() {
           onPress={() => setIsScoringOpen((value) => !value)}
           style={({ pressed }) => [
             styles.compactSectionHeader,
-            { backgroundColor: theme.colors.cardTint, borderColor: theme.colors.border },
-            isScoringOpen && { borderColor: theme.colors.primary },
+            isScoringOpen && styles.compactSectionHeaderOpen,
             pressed && styles.pressed,
           ]}>
           <View style={styles.compactSectionText}>
@@ -611,17 +608,42 @@ export default function CreateMatchScreen() {
         <Text style={styles.helperText}>Leave blank to generate a simple name automatically.</Text>
 
         <View style={styles.teamModePanel}>
-          <View style={styles.teamModeTextBlock}>
+          <View style={styles.teamModeHeader}>
             <Text style={styles.teamModeTitle}>Scoring mode</Text>
-            <Text style={styles.teamModeText}>{teamMode ? `${teamCount} teams - ${playersPerTeam} players each` : 'Individual players'}</Text>
+            <Text style={styles.teamModeText}>{teamMode ? `${teamCount} teams - ${playersPerTeam} players each` : 'Track each player separately.'}</Text>
           </View>
-          <Pressable
-            accessibilityRole="switch"
-            accessibilityState={{ checked: teamMode }}
-            onPress={handleToggleTeamMode}
-            style={({ pressed }) => [styles.teamSwitch, teamMode && { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
-            <Text style={[styles.teamSwitchText, teamMode && styles.teamSwitchTextActive]}>{teamMode ? 'Teams' : 'Solo'}</Text>
-          </Pressable>
+          <View style={styles.segmentedControl}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: !teamMode }}
+              onPress={() => {
+                if (teamMode) {
+                  handleToggleTeamMode();
+                }
+              }}
+              style={({ pressed }) => [
+                styles.segmentButton,
+                !teamMode && { backgroundColor: theme.colors.primary },
+                pressed && styles.pressed,
+              ]}>
+              <Text style={[styles.segmentButtonText, !teamMode && styles.segmentButtonTextActive]}>Individual</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: teamMode }}
+              onPress={() => {
+                if (!teamMode) {
+                  handleToggleTeamMode();
+                }
+              }}
+              style={({ pressed }) => [
+                styles.segmentButton,
+                teamMode && { backgroundColor: theme.colors.primary },
+                pressed && styles.pressed,
+              ]}>
+              <Text style={[styles.segmentButtonText, teamMode && styles.segmentButtonTextActive]}>Teams</Text>
+            </Pressable>
+          </View>
         </View>
 
         {teamMode ? (
@@ -768,9 +790,11 @@ export default function CreateMatchScreen() {
         )}
       </View>
 
-      <Pressable accessibilityRole="button" onPress={handleStartMatch} style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primaryShadow }, pressed && styles.pressed]}>
-        <Text style={styles.primaryButtonText}>Start Match</Text>
-      </Pressable>
+      <View style={styles.startMatchFooter}>
+        <Pressable accessibilityRole="button" onPress={handleStartMatch} style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primaryShadow }, pressed && styles.pressed]}>
+          <Text style={styles.primaryButtonText}>Start Match</Text>
+        </Pressable>
+      </View>
 
       </ScrollView>
       <Modal animationType="slide" onRequestClose={() => setRulesModalPresetId(null)} transparent visible={Boolean(rulesModalPreset)}>
@@ -850,15 +874,15 @@ const styles = StyleSheet.create({
     paddingBottom: 26,
   },
   heroCard: {
-    gap: 6,
+    gap: 4,
     borderRadius: 8,
     backgroundColor: '#172033',
-    padding: 12,
+    padding: 10,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    elevation: 4,
   },
   kicker: {
     color: '#66E3D2',
@@ -868,14 +892,14 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '900',
-    lineHeight: 29,
+    lineHeight: 27,
   },
   subtitle: {
     color: '#CBD5E1',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
   },
   card: {
     gap: 9,
@@ -911,16 +935,21 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   compactSectionHeader: {
-    minHeight: 48,
+    minHeight: 44,
     borderRadius: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#D8DEE8',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 10,
-    padding: 10,
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  compactSectionHeaderOpen: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#CBD5E1',
   },
   compactSectionText: {
     flex: 1,
@@ -932,8 +961,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   compactButton: {
-    width: 38,
-    height: 38,
+    width: 32,
+    height: 32,
     borderRadius: 999,
     backgroundColor: '#111827',
     alignItems: 'center',
@@ -941,7 +970,7 @@ const styles = StyleSheet.create({
   },
   compactButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '900',
   },
   rulesOverlay: {
@@ -1175,19 +1204,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   teamModePanel: {
-    minHeight: 58,
+    minHeight: 86,
     borderRadius: 8,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     gap: 8,
     padding: 10,
   },
-  teamModeTextBlock: {
-    flex: 1,
+  teamModeHeader: {
     gap: 2,
   },
   teamModeTitle: {
@@ -1199,6 +1224,29 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 12,
     lineHeight: 16,
+  },
+  segmentedControl: {
+    minHeight: 42,
+    borderRadius: 8,
+    backgroundColor: '#E8EEF5',
+    flexDirection: 'row',
+    gap: 4,
+    padding: 4,
+  },
+  segmentButton: {
+    flex: 1,
+    minHeight: 34,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentButtonText: {
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  segmentButtonTextActive: {
+    color: '#FFFFFF',
   },
   teamSwitch: {
     minWidth: 64,
@@ -1341,10 +1389,12 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   savedPlayersPanel: {
-    gap: 10,
+    gap: 8,
     borderRadius: 8,
-    backgroundColor: '#F3F7FB',
-    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E8EEF5',
+    backgroundColor: '#FFFFFF',
+    padding: 10,
   },
   savedPlayersHeader: {
     flexDirection: 'row',
@@ -1378,23 +1428,23 @@ const styles = StyleSheet.create({
   savedPlayerChip: {
     borderRadius: 999,
     backgroundColor: '#E0F2FE',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
   },
   savedPlayerChipText: {
     color: '#0369A1',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '900',
   },
   playerInput: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 52,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#D8DEE8',
     backgroundColor: '#F8FAFC',
     color: '#111827',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     paddingHorizontal: 12,
   },
@@ -1403,8 +1453,8 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   addButton: {
-    minWidth: 74,
-    minHeight: 44,
+    minWidth: 86,
+    minHeight: 52,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1412,8 +1462,8 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '900',
   },
   inlineEmpty: {
     borderRadius: 8,
@@ -1480,7 +1530,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   primaryButton: {
-    minHeight: 44,
+    minHeight: 54,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1493,8 +1543,18 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  startMatchFooter: {
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    padding: 8,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 2,
   },
   nameEditorOverlay: {
     flex: 1,

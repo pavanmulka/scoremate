@@ -17,6 +17,7 @@ If a command says project/config is missing, run `pwd` and `ls`. You should see 
 | Test on phone | `npx expo start` | Scan QR with Expo Go |
 | Refresh Expo Go | `r` | Press in Expo terminal |
 | Stop server | `Ctrl + C` | Press in terminal |
+| TypeScript check | `npx tsc --noEmit` | Run before commit/build |
 | Lint after changes | `npm run lint` | Skip only if script is missing |
 
 ## Git
@@ -57,6 +58,7 @@ APK = Android install file. AAB = Google Play upload file. IPA = iPhone app file
 | GitHub rejects password | Use GitHub username + Personal Access Token |
 | Git push rejected | Pull first: `git pull origin main --allow-unrelated-histories` |
 | AsyncStorage Android EAS error | Run `npx expo install @react-native-async-storage/async-storage`, then `npm install`, then rebuild |
+| First-time welcome popup will not show again | Settings -> Clear local data resets it, but also clears local matches/players/theme |
 
 AsyncStorage error example:
 
@@ -67,6 +69,7 @@ Could not find org.asyncstorage.shared_storage:storage-android:1.0.0
 ## After Code Changes
 
 ```bash
+npx tsc --noEmit
 npm run lint
 npx expo start
 git add .
@@ -80,6 +83,7 @@ git push
 | --- | --- |
 | App context | `docs/APP_CONTEXT.md` |
 | Scoring rules | `docs/SCORING_RULES.md` |
+| Least Count rules | `docs/LEAST_COUNT_RULES.md` |
 | Monetization plan | `docs/MONETIZATION_PLAN.md` |
 
 Keep README command-focused. Put app explanation in docs files only.
