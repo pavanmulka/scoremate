@@ -9,11 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.pavankumarmulka.scoremate",
+      "bundleIdentifier": "com.pavanlabs.scoremate",
       "supportsTablet": true
     },
     "android": {
-      "package": "com.pavankumarmulka.scoremate",
+      "package": "com.pavanlabs.scoremate",
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
