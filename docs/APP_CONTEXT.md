@@ -18,4 +18,7 @@
 - Game library uses category filters and short rules popups
 - Settings pages are store-safe and avoid visible Pro/payment/testing controls
 - Route headers should not expose Expo route groups like `(tabs)`
+- Language preference is stored locally with AsyncStorage key `scoremate_language`
+- Common UI supports English, Spanish, Hindi, Telugu, Tamil, Kannada, Malayalam, French, Portuguese, and Arabic
+- Game rules remain English until a later translation pass
 - Future idea: add more games later

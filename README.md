@@ -84,6 +84,7 @@ git push
 | App context | `docs/APP_CONTEXT.md` |
 | Scoring rules | `docs/SCORING_RULES.md` |
 | Least Count rules | `docs/LEAST_COUNT_RULES.md` |
+| Languages | `docs/LANGUAGES.md` |
 | Monetization plan | `docs/MONETIZATION_PLAN.md` |
 
 Keep README command-focused. Put app explanation in docs files only.

@@ -3,9 +3,11 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Share, St
 
 import { createScoreMateBackup, parseScoreMateBackup, restoreScoreMateBackup, stringifyBackup } from '@/features/matches/dataBackup';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
+import { useI18n } from '@/src/i18n';
 
 export default function BackupScreen() {
   const theme = useScoreMateTheme();
+  const { t } = useI18n();
   const [backupText, setBackupText] = useState('');
   const [isWorking, setIsWorking] = useState(false);
   const hasBackupText = backupText.trim().length > 0;
@@ -47,7 +49,7 @@ export default function BackupScreen() {
       'Restore backup?',
       `This will replace local data with ${backup.matches.length} matches and ${backup.savedPlayers.length} saved players from the backup.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
           text: 'Restore',
           onPress: async () => {
@@ -79,7 +81,7 @@ export default function BackupScreen() {
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled">
         <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
-          <Text style={styles.title}>Backup & Restore</Text>
+          <Text style={styles.title}>{t('backupRestore')}</Text>
           <Text style={styles.subtitle}>Export or restore local ScoreMate data. No login or cloud sync.</Text>
         </View>
 

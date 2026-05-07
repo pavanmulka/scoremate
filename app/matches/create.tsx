@@ -17,6 +17,7 @@ import { getMatches, saveMatch } from '@/features/matches/matchStorage';
 import { clearSavedPlayers, deleteSavedPlayer, getSavedPlayers, savePlayerNames } from '@/features/matches/playerStorage';
 import { DEFAULT_OUT_LIMIT, createScoringRule, getScoringPreset, modeNeedsTarget, scoringPresets } from '@/features/matches/scoringRules';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
+import { useI18n } from '@/src/i18n';
 import type { Match, Player, SavedPlayer, ScoringMode } from '@/features/matches/types';
 
 const minimumTeamCount = 2;
@@ -79,6 +80,7 @@ function getFirstParam(value: string | string[] | undefined) {
 
 export default function CreateMatchScreen() {
   const theme = useScoreMateTheme();
+  const { t } = useI18n();
   const params = useLocalSearchParams();
   const playerNameInputRef = useRef<TextInput>(null);
   const requestedGamePresetId = getFirstParam(params.gamePresetId);
@@ -280,13 +282,13 @@ export default function CreateMatchScreen() {
 
   function handlePlayerOptions(player: Player) {
     Alert.alert(player.name, 'Choose an action for this player.', [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('cancel'), style: 'cancel' },
       {
         text: 'Edit name',
         onPress: () => setNameEditor({ type: 'player', playerId: player.id, value: player.name }),
       },
       {
-        text: 'Delete',
+        text: t('delete'),
         style: 'destructive',
         onPress: () => setPlayers((currentPlayers) => currentPlayers.filter((storedPlayer) => storedPlayer.id !== player.id)),
       },
@@ -335,7 +337,7 @@ export default function CreateMatchScreen() {
 
   function handleRemoveSavedPlayer(savedPlayer: SavedPlayer) {
     Alert.alert('Remove saved player?', `Remove "${savedPlayer.name}" from quick add?`, [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('cancel'), style: 'cancel' },
       {
         text: 'Remove',
         style: 'destructive',
@@ -349,7 +351,7 @@ export default function CreateMatchScreen() {
 
   function handleClearSavedPlayers() {
     Alert.alert('Clear saved players?', 'This removes every name from quick add. Your existing matches will not change.', [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('cancel'), style: 'cancel' },
       {
         text: 'Clear all',
         style: 'destructive',
@@ -427,7 +429,7 @@ export default function CreateMatchScreen() {
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled">
       <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
-        <Text style={styles.title}>Create match</Text>
+        <Text style={styles.title}>{t('createMatch')}</Text>
         <Text style={styles.subtitle}>Choose a game, add players, and start scoring.</Text>
       </View>
 
@@ -442,8 +444,8 @@ export default function CreateMatchScreen() {
             pressed && styles.pressed,
           ]}>
           <View style={styles.compactSectionText}>
-            <Text style={styles.label}>Select game</Text>
-            <Text numberOfLines={1} style={styles.compactSectionHint}>{selectedGamePreset ? selectedGamePreset.title : 'Custom Scorekeeper'}</Text>
+            <Text style={styles.label}>{t('selectGame')}</Text>
+            <Text numberOfLines={1} style={styles.compactSectionHint}>{selectedGamePreset ? selectedGamePreset.title : t('customScorekeeper')}</Text>
           </View>
           {selectedGamePreset ? (
             <Pressable accessibilityRole="button" onPress={() => setRulesModalPresetId(selectedGamePreset.id)} style={({ pressed }) => [styles.rulesButton, pressed && styles.pressed]}>
@@ -489,7 +491,7 @@ export default function CreateMatchScreen() {
                     selectedGamePresetId === customGamePresetId && { borderColor: theme.colors.accent, backgroundColor: theme.colors.softAccent },
                     pressed && styles.pressed,
                   ]}>
-                  <Text style={[styles.gamePresetTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Custom Scorekeeper</Text>
+                  <Text style={[styles.gamePresetTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>{t('customScorekeeper')}</Text>
                   <Text style={[styles.gamePresetDescription, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>
                     Manual scoring for any game. Highest score leads by default.
                   </Text>
@@ -541,7 +543,7 @@ export default function CreateMatchScreen() {
             pressed && styles.pressed,
           ]}>
           <View style={styles.compactSectionText}>
-            <Text style={styles.label}>Select scoring style</Text>
+            <Text style={styles.label}>{t('scoringStyle')}</Text>
             <Text numberOfLines={1} style={styles.compactSectionHint}>{selectedPreset.title}</Text>
           </View>
           <View style={styles.compactButton}>
@@ -594,7 +596,7 @@ export default function CreateMatchScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.label}>Match name</Text>
+        <Text style={styles.label}>{t('matchName')}</Text>
         <TextInput
           autoCapitalize="words"
           onChangeText={setMatchName}
@@ -678,7 +680,7 @@ export default function CreateMatchScreen() {
           </View>
         ) : null}
 
-        <Text style={styles.label}>Players</Text>
+        <Text style={styles.label}>{t('players')}</Text>
         <View style={styles.addRow}>
           <TextInput
             autoCapitalize="words"
@@ -694,7 +696,7 @@ export default function CreateMatchScreen() {
             value={playerName}
           />
           <Pressable accessibilityRole="button" onPress={handleAddPlayer} style={({ pressed }) => [styles.addButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.addButtonText}>+ Add</Text>
+            <Text style={styles.addButtonText}>+ {t('add')}</Text>
           </Pressable>
         </View>
 
@@ -775,13 +777,13 @@ export default function CreateMatchScreen() {
                     accessibilityRole="button"
                     onPress={() => setNameEditor({ type: 'player', playerId: player.id, value: player.name })}
                     style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}>
-                    <Text style={styles.editButtonText}>Edit</Text>
+                    <Text style={styles.editButtonText}>{t('edit')}</Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
                     onPress={() => setPlayers((currentPlayers) => currentPlayers.filter((storedPlayer) => storedPlayer.id !== player.id))}
                     style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]}>
-                    <Text style={styles.deleteButtonText}>Delete</Text>
+                    <Text style={styles.deleteButtonText}>{t('delete')}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -792,7 +794,7 @@ export default function CreateMatchScreen() {
 
       <View style={styles.startMatchFooter}>
         <Pressable accessibilityRole="button" onPress={handleStartMatch} style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primaryShadow }, pressed && styles.pressed]}>
-          <Text style={styles.primaryButtonText}>Start Match</Text>
+          <Text style={styles.primaryButtonText}>{t('startMatch')}</Text>
         </Pressable>
       </View>
 
@@ -821,7 +823,7 @@ export default function CreateMatchScreen() {
                   ))}
                 </View>
                 <Pressable accessibilityRole="button" onPress={() => setRulesModalPresetId(null)} style={({ pressed }) => [styles.rulesCloseButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
-                  <Text style={styles.rulesCloseButtonText}>Done</Text>
+                  <Text style={styles.rulesCloseButtonText}>{t('done')}</Text>
                 </Pressable>
               </ScrollView>
             ) : null}
@@ -842,7 +844,7 @@ export default function CreateMatchScreen() {
             />
             <View style={styles.nameEditorActions}>
               <Pressable accessibilityRole="button" onPress={() => setNameEditor(null)} style={({ pressed }) => [styles.nameEditorSecondaryButton, pressed && styles.pressed]}>
-                <Text style={styles.nameEditorSecondaryText}>Cancel</Text>
+                <Text style={styles.nameEditorSecondaryText}>{t('cancel')}</Text>
               </Pressable>
               <Pressable accessibilityRole="button" onPress={handleSaveEditedName} style={({ pressed }) => [styles.nameEditorPrimaryButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
                 <Text style={styles.nameEditorPrimaryText}>Save</Text>

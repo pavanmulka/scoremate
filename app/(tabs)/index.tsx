@@ -21,32 +21,33 @@ import { getPlayerStandings } from '@/features/matches/scoreCalculator';
 import { formatMatchShareText } from '@/features/matches/shareFormatter';
 import { getHasSeenWelcome, markWelcomeSeen } from '@/features/matches/welcomeStorage';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
+import { useI18n, type TranslationKey } from '@/src/i18n';
 import type { Match, ScoringMode } from '@/features/matches/types';
 
 const matchFilters = ['all', 'live', 'completed'] as const;
 
 const welcomeFeatures: {
-  title: string;
+  titleKey: TranslationKey;
   description: string;
   icon: keyof typeof Ionicons.glyphMap;
 }[] = [
   {
-    title: 'Many games',
+    titleKey: 'manyGames',
     description: 'Choose presets or use Custom Scorekeeper',
     icon: 'apps-outline',
   },
   {
-    title: 'Game rules',
+    titleKey: 'gameRules',
     description: 'View quick rules when needed',
     icon: 'book-outline',
   },
   {
-    title: 'Players or teams',
+    titleKey: 'playersOrTeams',
     description: 'Score individuals or team games',
     icon: 'people-outline',
   },
   {
-    title: 'Offline history',
+    titleKey: 'offlineHistory',
     description: 'Matches stay on this phone',
     icon: 'phone-portrait-outline',
   },
@@ -73,6 +74,7 @@ function formatUpdatedDate(updatedAt: string) {
 
 export default function HomeScreen() {
   const theme = useScoreMateTheme();
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const [matches, setMatches] = useState<Match[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -244,7 +246,7 @@ export default function HomeScreen() {
             </View>
             <View style={styles.headerText}>
               <Text style={[styles.kicker, { color: theme.colors.accent }]}>Scores for any game</Text>
-              <Text style={styles.title}>ScoreMate</Text>
+              <Text style={styles.title}>{t('homeTitle')}</Text>
             </View>
           </View>
           <Pressable
@@ -255,7 +257,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <Text style={styles.subtitle}>Start a match, add players, and track scores offline.</Text>
+        <Text style={styles.subtitle}>{t('homeSubtitle')}</Text>
         <View style={styles.heroChipRow}>
           <View style={styles.heroChip}>
             <Text style={styles.heroChipText}>Offline</Text>
@@ -269,7 +271,7 @@ export default function HomeScreen() {
       <View style={styles.quickStartCard}>
         <View style={styles.quickStartHeader}>
           <View>
-            <Text style={styles.quickStartTitle}>Start New Match</Text>
+            <Text style={styles.quickStartTitle}>{t('startNewMatch')}</Text>
             <Text style={styles.quickStartHint}>Choose a game, then add players.</Text>
           </View>
         </View>
@@ -278,7 +280,7 @@ export default function HomeScreen() {
           accessibilityRole="button"
           onPress={() => router.push(createMatchHref)}
           style={({ pressed }) => [styles.primaryButton, styles.quickStartPrimaryButton, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primaryShadow }, pressed && styles.pressed]}>
-          <Text style={styles.primaryButtonText}>Start New Match</Text>
+          <Text style={styles.primaryButtonText}>{t('startNewMatch')}</Text>
         </Pressable>
 
         <Pressable
@@ -290,13 +292,13 @@ export default function HomeScreen() {
             pressed && styles.pressed,
           ]}>
           <View style={styles.quickSelectorText}>
-            <Text style={styles.quickSelectorLabel}>Select game</Text>
-            <Text numberOfLines={1} style={styles.quickSelectorValue}>{selectedGamePreset?.title ?? 'Custom Scorekeeper'}</Text>
+            <Text style={styles.quickSelectorLabel}>{t('selectGame')}</Text>
+            <Text numberOfLines={1} style={styles.quickSelectorValue}>{selectedGamePreset?.title ?? t('customScorekeeper')}</Text>
           </View>
           <View style={styles.quickSelectorActions}>
             {selectedGamePreset ? (
               <Pressable accessibilityRole="button" onPress={() => setRulesModalPresetId(selectedGamePreset.id)} style={({ pressed }) => [styles.rulesButton, pressed && styles.pressed]}>
-                <Text style={styles.rulesButtonText}>Rules</Text>
+                <Text style={styles.rulesButtonText}>{t('gameRules')}</Text>
               </Pressable>
             ) : null}
             <View style={styles.quickArrowButton}>
@@ -337,7 +339,7 @@ export default function HomeScreen() {
                   pressed && styles.pressed,
                 ]}>
                 <View style={styles.quickOptionText}>
-                  <Text style={[styles.quickOptionTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Custom Scorekeeper</Text>
+                  <Text style={[styles.quickOptionTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>{t('customScorekeeper')}</Text>
                   <Text style={[styles.quickOptionDescription, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Works for any manual score game.</Text>
                 </View>
                 <Text style={[styles.quickOptionMeta, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Default</Text>
@@ -384,7 +386,7 @@ export default function HomeScreen() {
             pressed && styles.pressed,
           ]}>
           <View style={styles.quickSelectorText}>
-            <Text style={styles.quickSelectorLabel}>Scoring style</Text>
+            <Text style={styles.quickSelectorLabel}>{t('scoringStyle')}</Text>
             <Text numberOfLines={1} style={styles.quickSelectorValue}>{selectedScoringPreset.title}</Text>
           </View>
           <View style={styles.quickArrowButton}>
@@ -421,15 +423,15 @@ export default function HomeScreen() {
 
       <View style={styles.capabilityCard}>
         <View style={styles.capabilityHeader}>
-          <Text style={styles.capabilityTitle}>What you can do</Text>
+          <Text style={styles.capabilityTitle}>{t('whatYouCanDo')}</Text>
         </View>
         <View style={styles.capabilityGrid}>
           {welcomeFeatures.map((feature) => (
-            <View key={feature.title} style={styles.capabilityItem}>
+            <View key={feature.titleKey} style={styles.capabilityItem}>
               <View style={[styles.capabilityIcon, { backgroundColor: theme.colors.cardTint }]}>
                 <Ionicons name={feature.icon} size={15} color={theme.colors.primaryShadow} />
               </View>
-              <Text style={styles.capabilityItemText}>{feature.title}</Text>
+              <Text style={styles.capabilityItemText}>{t(feature.titleKey)}</Text>
             </View>
           ))}
         </View>
@@ -441,7 +443,7 @@ export default function HomeScreen() {
           onPress={() => setIsRecentMatchesOpen((value) => !value)}
           style={({ pressed }) => [styles.recentToggleHeader, pressed && styles.pressed]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent matches</Text>
+            <Text style={styles.sectionTitle}>{t('recentMatches')}</Text>
             <Text style={styles.sectionHint}>{matches.length === 1 ? '1 saved match.' : `${matches.length} saved matches.`}</Text>
             {!isRecentMatchesOpen ? <Text style={styles.sectionSubHint}>Tap to continue a previous game.</Text> : null}
           </View>
@@ -529,13 +531,13 @@ export default function HomeScreen() {
                       accessibilityRole="button"
                       onPress={() => router.push(`/matches/settings?matchId=${encodeURIComponent(match.id)}` as Href)}
                       style={({ pressed }) => [styles.swipeEditAction, pressed && styles.pressed]}>
-                      <Text style={styles.swipeActionText}>Edit</Text>
+                      <Text style={styles.swipeActionText}>{t('edit')}</Text>
                     </Pressable>
                     <Pressable
                       accessibilityRole="button"
                       onPress={() => handleDeleteMatch(match)}
                       style={({ pressed }) => [styles.swipeDeleteAction, pressed && styles.pressed]}>
-                      <Text style={styles.swipeActionText}>Delete</Text>
+                      <Text style={styles.swipeActionText}>{t('delete')}</Text>
                     </Pressable>
                   </View>
                 )}>
@@ -579,7 +581,7 @@ export default function HomeScreen() {
           {rulesModalPreset ? (
             <ScrollView contentContainerStyle={styles.rulesSheetContent}>
               <View style={[styles.rulesHero, { backgroundColor: theme.colors.hero }]}>
-                <Text style={[styles.kicker, { color: theme.colors.accent }]}>Game rules</Text>
+                <Text style={[styles.kicker, { color: theme.colors.accent }]}>{t('gameRules')}</Text>
                 <Text style={styles.rulesSheetTitle}>{rulesModalPreset.title}</Text>
                 <Text style={styles.rulesSheetSubtitle}>{rulesModalPreset.description}</Text>
               </View>
@@ -597,7 +599,7 @@ export default function HomeScreen() {
                 ))}
               </View>
               <Pressable accessibilityRole="button" onPress={() => setRulesModalPresetId(null)} style={({ pressed }) => [styles.rulesCloseButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
-                <Text style={styles.rulesCloseButtonText}>Done</Text>
+                <Text style={styles.rulesCloseButtonText}>{t('done')}</Text>
               </Pressable>
             </ScrollView>
           ) : null}
@@ -616,12 +618,12 @@ export default function HomeScreen() {
           </Text>
           <View style={styles.welcomeFeatureList}>
             {welcomeFeatures.map((feature) => (
-              <View key={feature.title} style={styles.welcomeFeatureRow}>
+              <View key={feature.titleKey} style={styles.welcomeFeatureRow}>
                 <View style={[styles.welcomeFeatureIcon, { backgroundColor: theme.colors.cardTint }]}>
                   <Ionicons name={feature.icon} size={17} color={theme.colors.primaryShadow} />
                 </View>
                 <View style={styles.welcomeFeatureText}>
-                  <Text style={styles.welcomeFeatureTitle}>{feature.title}</Text>
+                  <Text style={styles.welcomeFeatureTitle}>{t(feature.titleKey)}</Text>
                   <Text style={styles.welcomeFeatureDescription}>{feature.description}</Text>
                 </View>
               </View>

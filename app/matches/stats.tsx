@@ -6,6 +6,7 @@ import { getMatches } from '@/features/matches/matchStorage';
 import { getSavedPlayers } from '@/features/matches/playerStorage';
 import { buildPlayerStats, type PlayerStats } from '@/features/matches/playerStats';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
+import { useI18n } from '@/src/i18n';
 
 function formatAverage(value: number) {
   return value.toFixed(value % 1 === 0 ? 0 : 1);
@@ -17,6 +18,7 @@ function formatRoundValue(value: number | null) {
 
 export default function PlayerStatsScreen() {
   const theme = useScoreMateTheme();
+  const { t } = useI18n();
   const [stats, setStats] = useState<PlayerStats[]>([]);
   const [matchCount, setMatchCount] = useState(0);
 
@@ -43,7 +45,7 @@ export default function PlayerStatsScreen() {
   return (
     <ScrollView style={[styles.screen, { backgroundColor: theme.colors.screen }]} contentContainerStyle={styles.container}>
       <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
-        <Text style={styles.title}>Player Stats</Text>
+        <Text style={styles.title}>{t('playerStats')}</Text>
         <Text style={styles.subtitle}>Stats are calculated from matches on this phone.</Text>
       </View>
 
@@ -67,7 +69,7 @@ export default function PlayerStatsScreen() {
       </View>
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Players</Text>
+        <Text style={styles.sectionTitle}>{t('players')}</Text>
         <Text style={styles.sectionHint}>Players are grouped by name for now.</Text>
       </View>
 

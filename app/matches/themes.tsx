@@ -10,6 +10,7 @@ import {
   type ScoreMateTheme,
   type ScoreMateThemeId,
 } from '@/features/matches/themeStorage';
+import { useI18n } from '@/src/i18n';
 
 type ThemeSectionId = 'regular' | 'flags';
 
@@ -34,6 +35,7 @@ const themeSections: {
 ];
 
 export default function ThemesScreen() {
+  const { t } = useI18n();
   const [selectedTheme, setTheme] = useState<ScoreMateTheme>(defaultScoreMateTheme);
   const [openSections, setOpenSections] = useState<Record<ThemeSectionId, boolean>>({
     regular: true,
@@ -113,7 +115,7 @@ export default function ThemesScreen() {
   return (
     <ScrollView style={[styles.screen, { backgroundColor: selectedTheme.colors.screen }]} contentContainerStyle={styles.container}>
       <View style={[styles.heroCard, { backgroundColor: selectedTheme.colors.hero }]}>
-        <Text style={styles.title}>Themes</Text>
+        <Text style={styles.title}>{t('themes')}</Text>
         <Text style={styles.subtitle}>Change the look of ScoreMate on this device.</Text>
       </View>
 

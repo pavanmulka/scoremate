@@ -12,6 +12,7 @@ import { getScoringPreset, getScoringRule, getScoringRuleSummary, isLowerScoreBe
 import { getMatchInsights, getPlayerStandings, getTeamStandings, hasTeamScoring } from '@/features/matches/scoreCalculator';
 import { formatMatchShareText } from '@/features/matches/shareFormatter';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
+import { useI18n } from '@/src/i18n';
 import type { Match, PlayerScore, PlayerStanding, Round } from '@/features/matches/types';
 
 function parseScore(value: string) {
@@ -64,6 +65,7 @@ function formatDraftSavedLabel(updatedAt: string) {
 
 export default function ScoreboardScreen() {
   const theme = useScoreMateTheme();
+  const { t } = useI18n();
   const { matchId } = useLocalSearchParams<{ matchId?: string }>();
   const [match, setMatch] = useState<Match | null>(null);
   const [scoresByPlayer, setScoresByPlayer] = useState<Record<string, string>>({});
@@ -136,9 +138,9 @@ export default function ScoreboardScreen() {
     }
 
     Alert.alert('Delete round?', 'This will remove the round and recalculate totals.', [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('delete'),
         style: 'destructive',
         onPress: async () => {
           const updatedMatch = await deleteRound(matchId, roundId);
@@ -290,7 +292,7 @@ export default function ScoreboardScreen() {
     }
 
     Alert.alert('Reopen match?', 'Score entry and round editing will be available again.', [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('cancel'), style: 'cancel' },
       {
         text: 'Reopen',
         onPress: async () => {
@@ -450,7 +452,7 @@ export default function ScoreboardScreen() {
                     setIsEditingLimit(false);
                   }}
                   style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
-                  <Text style={styles.secondaryButtonText}>Cancel</Text>
+                  <Text style={styles.secondaryButtonText}>{t('cancel')}</Text>
                 </Pressable>
                 <Pressable accessibilityRole="button" onPress={handleSaveOutLimit} style={({ pressed }) => [styles.saveLimitButton, pressed && styles.pressed]}>
                   <Text style={styles.saveLimitButtonText}>Save</Text>
@@ -470,7 +472,7 @@ export default function ScoreboardScreen() {
               ) : null}
               {canEditScoreTarget ? (
                 <Pressable accessibilityRole="button" onPress={() => setIsEditingLimit(true)} style={({ pressed }) => [styles.editLimitButton, { backgroundColor: theme.colors.cardTint }, pressed && styles.pressed]}>
-                  <Text style={[styles.editLimitButtonText, { color: theme.colors.primaryShadow }]}>Edit</Text>
+                  <Text style={[styles.editLimitButtonText, { color: theme.colors.primaryShadow }]}>{t('edit')}</Text>
                 </Pressable>
               ) : null}
             </>
@@ -479,24 +481,24 @@ export default function ScoreboardScreen() {
 
         <View style={styles.heroActions}>
           <Pressable accessibilityRole="button" onPress={handleEndMatchSummary} style={({ pressed }) => [styles.summaryButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.summaryButtonText}>{isCompleted || winner ? 'Summary' : 'End'}</Text>
+            <Text style={styles.summaryButtonText}>{isCompleted || winner ? t('summary') : t('end')}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={handleShareSummary} style={({ pressed }) => [styles.shareButton, { backgroundColor: theme.colors.secondary }, pressed && styles.pressed]}>
-            <Text style={[styles.shareButtonText, { color: theme.colors.secondaryText }]}>Share</Text>
+            <Text style={[styles.shareButtonText, { color: theme.colors.secondaryText }]}>{t('share')}</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push(`/matches/settings?matchId=${encodeURIComponent(matchId)}` as Href)}
             style={({ pressed }) => [styles.settingsButton, { backgroundColor: theme.colors.softAccent }, pressed && styles.pressed]}>
-            <Text style={[styles.settingsButtonText, { color: theme.colors.secondaryText }]}>Settings</Text>
+            <Text style={[styles.settingsButtonText, { color: theme.colors.secondaryText }]}>{t('settings')}</Text>
           </Pressable>
           {isCompleted ? (
             <Pressable accessibilityRole="button" onPress={handleReopenMatch} style={({ pressed }) => [styles.reopenButton, { backgroundColor: theme.colors.secondary }, pressed && styles.pressed]}>
-              <Text style={[styles.reopenButtonText, { color: theme.colors.secondaryText }]}>Reopen</Text>
+              <Text style={[styles.reopenButtonText, { color: theme.colors.secondaryText }]}>{t('reopen')}</Text>
             </Pressable>
           ) : null}
           <Pressable accessibilityRole="button" onPress={handlePlayAgain} style={({ pressed }) => [styles.playAgainButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.playAgainButtonText}>Replay</Text>
+            <Text style={styles.playAgainButtonText}>{t('replay')}</Text>
           </Pressable>
         </View>
       </View>
@@ -541,15 +543,15 @@ export default function ScoreboardScreen() {
 
           <View style={styles.roundActionRow}>
             <Pressable accessibilityRole="button" onPress={handleClearRoundDraft} style={({ pressed }) => [styles.clearDraftButton, pressed && styles.pressed]}>
-              <Text style={styles.clearDraftButtonText}>Clear</Text>
+              <Text style={styles.clearDraftButtonText}>{t('clear')}</Text>
             </Pressable>
             {match.rounds.length > 0 ? (
               <Pressable accessibilityRole="button" onPress={handleUndoLastRound} style={({ pressed }) => [styles.undoButton, pressed && styles.pressed]}>
-                <Text style={styles.undoButtonText}>Undo</Text>
+                <Text style={styles.undoButtonText}>{t('undo')}</Text>
               </Pressable>
             ) : null}
             <Pressable accessibilityRole="button" onPress={handleSaveRound} style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primaryShadow }, pressed && styles.pressed]}>
-              <Text style={styles.primaryButtonText}>Save Round</Text>
+              <Text style={styles.primaryButtonText}>{t('saveRound')}</Text>
             </Pressable>
           </View>
         </View>
@@ -636,13 +638,13 @@ export default function ScoreboardScreen() {
                         )
                       }
                       style={({ pressed }) => [styles.roundInlineEditButton, pressed && styles.pressed]}>
-                      <Text style={styles.roundInlineEditText}>Edit</Text>
+                      <Text style={styles.roundInlineEditText}>{t('edit')}</Text>
                     </Pressable>
                     <Pressable
                       accessibilityRole="button"
                       onPress={() => handleDeleteRound(round.id)}
                       style={({ pressed }) => [styles.roundInlineDeleteButton, pressed && styles.pressed]}>
-                      <Text style={styles.roundInlineDeleteText}>Delete</Text>
+                      <Text style={styles.roundInlineDeleteText}>{t('delete')}</Text>
                     </Pressable>
                   </View>
                 ) : null}
@@ -667,13 +669,13 @@ export default function ScoreboardScreen() {
                         )
                       }
                       style={({ pressed }) => [styles.roundSwipeEditAction, pressed && styles.pressed]}>
-                      <Text style={styles.roundSwipeActionText}>Edit</Text>
+                      <Text style={styles.roundSwipeActionText}>{t('edit')}</Text>
                     </Pressable>
                     <Pressable
                       accessibilityRole="button"
                       onPress={() => handleDeleteRound(round.id)}
                       style={({ pressed }) => [styles.roundSwipeDeleteAction, pressed && styles.pressed]}>
-                      <Text style={styles.roundSwipeActionText}>Delete</Text>
+                      <Text style={styles.roundSwipeActionText}>{t('delete')}</Text>
                     </Pressable>
                   </View>
                 )}>
@@ -779,7 +781,7 @@ export default function ScoreboardScreen() {
                   </Pressable>
                 ) : null}
                 <Pressable accessibilityRole="button" onPress={() => void handleShareSummary()} style={({ pressed }) => [styles.summarySecondaryAction, pressed && styles.pressed]}>
-                  <Text style={styles.summarySecondaryActionText}>Share</Text>
+                  <Text style={styles.summarySecondaryActionText}>{t('share')}</Text>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"

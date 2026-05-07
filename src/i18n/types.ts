@@ -1,0 +1,50 @@
+export const supportedLanguageCodes = ['en', 'es', 'hi', 'te', 'ta', 'kn', 'ml', 'fr', 'pt', 'ar'] as const;
+
+export type SupportedLanguageCode = (typeof supportedLanguageCodes)[number];
+export type LanguagePreference = 'system' | SupportedLanguageCode;
+
+export type TranslationKey =
+  | 'add'
+  | 'aboutScoreMate'
+  | 'back'
+  | 'backupRestore'
+  | 'cancel'
+  | 'clear'
+  | 'clearLocalData'
+  | 'confirm'
+  | 'createMatch'
+  | 'customScorekeeper'
+  | 'delete'
+  | 'done'
+  | 'edit'
+  | 'end'
+  | 'gameRules'
+  | 'homeSubtitle'
+  | 'homeTitle'
+  | 'language'
+  | 'languageSystemDefault'
+  | 'languageSystemDescription'
+  | 'languageTitle'
+  | 'languageSubtitle'
+  | 'manyGames'
+  | 'matchName'
+  | 'offlineHistory'
+  | 'playerStats'
+  | 'players'
+  | 'playersOrTeams'
+  | 'recentMatches'
+  | 'reopen'
+  | 'replay'
+  | 'saveRound'
+  | 'scoringStyle'
+  | 'selectGame'
+  | 'settings'
+  | 'share'
+  | 'startMatch'
+  | 'startNewMatch'
+  | 'summary'
+  | 'themes'
+  | 'undo'
+  | 'whatYouCanDo';
+
+export type TranslationDictionary = Record<TranslationKey, string>;

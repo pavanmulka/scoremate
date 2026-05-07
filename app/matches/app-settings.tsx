@@ -9,40 +9,48 @@ import { clearSavedPlayersForTesting } from '@/features/matches/playerStorage';
 import { clearSelectedThemeForTesting } from '@/features/matches/themeStorage';
 import { clearWelcomeForTesting } from '@/features/matches/welcomeStorage';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
-
-const settingsRows = [
-  {
-    title: 'Themes',
-    description: 'Choose the app color style.',
-    icon: 'color-palette-outline',
-    href: '/matches/themes' as Href,
-  },
-  {
-    title: 'Player Stats',
-    description: 'Review saved players and match activity.',
-    icon: 'stats-chart-outline',
-    href: '/matches/stats' as Href,
-  },
-  {
-    title: 'Backup / Restore',
-    description: 'Export or restore local data.',
-    icon: 'cloud-upload-outline',
-    href: '/matches/backup' as Href,
-  },
-] satisfies {
-  title: string;
-  description: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  href: Href;
-}[];
+import { clearLanguagePreferenceForTesting, languageNames, useI18n } from '@/src/i18n';
 
 export default function AppSettingsScreen() {
   const theme = useScoreMateTheme();
+  const { languageCode, languagePreference, t } = useI18n();
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
+  const currentLanguageLabel = languagePreference === 'system' ? `${t('languageSystemDefault')} - ${languageNames[languageCode]}` : languageNames[languagePreference];
+  const settingsRows = [
+    {
+      title: t('themes'),
+      description: 'Choose the app color style.',
+      icon: 'color-palette-outline',
+      href: '/matches/themes' as Href,
+    },
+    {
+      title: t('language'),
+      description: currentLanguageLabel,
+      icon: 'language-outline',
+      href: '/matches/language' as Href,
+    },
+    {
+      title: t('playerStats'),
+      description: 'Review saved players and match activity.',
+      icon: 'stats-chart-outline',
+      href: '/matches/stats' as Href,
+    },
+    {
+      title: t('backupRestore'),
+      description: 'Export or restore local data.',
+      icon: 'cloud-upload-outline',
+      href: '/matches/backup' as Href,
+    },
+  ] satisfies {
+    title: string;
+    description: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    href: Href;
+  }[];
 
   function handleClearLocalData() {
     Alert.alert('Clear local data?', 'This removes saved matches, round drafts, saved players, and the selected theme from this device.', [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('cancel'), style: 'cancel' },
       {
         text: 'Clear data',
         style: 'destructive',
@@ -52,6 +60,7 @@ export default function AppSettingsScreen() {
           await clearSelectedThemeForTesting();
           await clearEntitlementsForTesting();
           await clearWelcomeForTesting();
+          await clearLanguagePreferenceForTesting();
           Alert.alert('Local data cleared', 'ScoreMate has been reset on this device.');
           router.replace('/' as Href);
         },
@@ -62,7 +71,7 @@ export default function AppSettingsScreen() {
   return (
     <ScrollView style={[styles.screen, { backgroundColor: theme.colors.screen }]} contentContainerStyle={styles.container}>
       <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.title}>{t('settings')}</Text>
         <Text style={styles.subtitle}>Manage ScoreMate on this device.</Text>
       </View>
 
@@ -89,10 +98,10 @@ export default function AppSettingsScreen() {
             <Ionicons name="trash-outline" size={18} color="#B91C1C" />
           </View>
           <View style={styles.settingsRowText}>
-            <Text style={styles.rowTitle}>Clear local data</Text>
+            <Text style={styles.rowTitle}>{t('clearLocalData')}</Text>
             <Text style={styles.rowDescription}>Remove matches, players, drafts, and theme.</Text>
           </View>
-          <Text style={styles.dangerText}>Clear</Text>
+          <Text style={styles.dangerText}>{t('clear')}</Text>
         </Pressable>
       </View>
 
@@ -102,7 +111,7 @@ export default function AppSettingsScreen() {
             <Ionicons name="information-circle-outline" size={18} color={theme.colors.primaryShadow} />
           </View>
           <View style={styles.settingsRowText}>
-            <Text style={styles.aboutTitle}>About ScoreMate</Text>
+            <Text style={styles.aboutTitle}>{t('aboutScoreMate')}</Text>
             <Text style={styles.versionText}>Version {appVersion}</Text>
           </View>
         </View>

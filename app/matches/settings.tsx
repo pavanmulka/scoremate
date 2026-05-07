@@ -9,6 +9,7 @@ import { savePlayerNames } from '@/features/matches/playerStorage';
 import { DEFAULT_OUT_LIMIT, createScoringRule, getScoringPreset, getScoringRule, modeNeedsTarget, scoringPresets } from '@/features/matches/scoringRules';
 import type { Match, Player, Round, ScoringMode } from '@/features/matches/types';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
+import { useI18n } from '@/src/i18n';
 
 function getDefaultTeamName(teamIndex: number) {
   return `Team ${String.fromCharCode(65 + teamIndex)}`;
@@ -40,6 +41,7 @@ function normalizeName(name: string) {
 
 export default function MatchSettingsScreen() {
   const theme = useScoreMateTheme();
+  const { t } = useI18n();
   const { matchId } = useLocalSearchParams<{ matchId?: string }>();
   const [match, setMatch] = useState<Match | null>(null);
   const [matchName, setMatchName] = useState('');
@@ -180,7 +182,7 @@ export default function MatchSettingsScreen() {
     }
 
     Alert.alert('Remove player?', `This removes "${player.name}" and their saved scores from this match history.`, [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('cancel'), style: 'cancel' },
       {
         text: 'Remove',
         style: 'destructive',
@@ -283,12 +285,12 @@ export default function MatchSettingsScreen() {
         keyboardShouldPersistTaps="handled">
         <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
           <Text style={[styles.kicker, { color: theme.colors.accent }]}>Match setup</Text>
-          <Text style={styles.title}>Settings</Text>
+          <Text style={styles.title}>{t('settings')}</Text>
           <Text style={styles.subtitle}>Rename the match or adjust the scoring setup.</Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>Match name</Text>
+          <Text style={styles.label}>{t('matchName')}</Text>
           <TextInput
             autoCapitalize="words"
             onChangeText={setMatchName}
@@ -337,7 +339,7 @@ export default function MatchSettingsScreen() {
               value={newPlayerName}
             />
             <Pressable accessibilityRole="button" onPress={handleAddPlayer} style={({ pressed }) => [styles.addPlayerButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.addPlayerButtonText}>Add</Text>
+              <Text style={styles.addPlayerButtonText}>{t('add')}</Text>
             </Pressable>
           </View>
           <Text style={styles.helperText}>Late players start at 0 for earlier rounds.</Text>
@@ -379,7 +381,7 @@ export default function MatchSettingsScreen() {
                 selectedGamePresetId === customGamePresetId && { backgroundColor: theme.colors.softAccent, borderColor: theme.colors.accent },
                 pressed && styles.pressed,
               ]}>
-              <Text style={[styles.optionTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Custom Scorekeeper</Text>
+              <Text style={[styles.optionTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>{t('customScorekeeper')}</Text>
               <Text style={[styles.optionDescription, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>
                 Choose scoring style manually.
               </Text>
@@ -402,7 +404,7 @@ export default function MatchSettingsScreen() {
                     <Text style={[styles.optionDescription, isSelected && { color: theme.colors.secondaryText }]}>{gamePreset.description}</Text>
                   </Pressable>
                   <Pressable accessibilityRole="button" onPress={() => setRulesModalPresetId(gamePreset.id)} style={({ pressed }) => [styles.rulesButton, pressed && styles.pressed]}>
-                    <Text style={styles.rulesButtonText}>Rules</Text>
+                    <Text style={styles.rulesButtonText}>{t('gameRules')}</Text>
                   </Pressable>
                 </View>
               );
@@ -411,7 +413,7 @@ export default function MatchSettingsScreen() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>Scoring style</Text>
+          <Text style={styles.label}>{t('scoringStyle')}</Text>
           <View style={styles.optionList}>
             {scoringPresets.map((preset) => {
               const isSelected = preset.mode === scoringMode;
@@ -479,7 +481,7 @@ export default function MatchSettingsScreen() {
                   ))}
                 </View>
                 <Pressable accessibilityRole="button" onPress={() => setRulesModalPresetId(null)} style={({ pressed }) => [styles.rulesCloseButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
-                  <Text style={styles.rulesCloseButtonText}>Done</Text>
+                  <Text style={styles.rulesCloseButtonText}>{t('done')}</Text>
                 </Pressable>
               </ScrollView>
             ) : null}
