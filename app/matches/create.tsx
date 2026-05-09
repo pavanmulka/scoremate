@@ -1,4 +1,5 @@
 import { router, type Href, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -16,6 +17,7 @@ import { createId } from '@/features/matches/matchFactory';
 import { getMatches, saveMatch } from '@/features/matches/matchStorage';
 import { clearSavedPlayers, deleteSavedPlayer, getSavedPlayers, savePlayerNames } from '@/features/matches/playerStorage';
 import { DEFAULT_OUT_LIMIT, createScoringRule, getScoringPreset, modeNeedsTarget, scoringPresets } from '@/features/matches/scoringRules';
+import { assignPlayersToTeams, getActiveTeamCount, getNextTeamSlot } from '@/features/matches/teamSetup';
 import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
 import { useI18n } from '@/src/i18n';
@@ -140,19 +142,8 @@ export default function CreateMatchScreen() {
       return null;
     }
 
-    for (const team of teamRows) {
-      const emptySlotIndex = team.slots.findIndex((player) => !player);
-
-      if (emptySlotIndex >= 0) {
-        return {
-          teamName: team.teamName,
-          playerNumber: emptySlotIndex + 1,
-        };
-      }
-    }
-
-    return null;
-  }, [teamMode, teamRows]);
+    return getNextTeamSlot(activeTeamLabels, players, playersPerTeam);
+  }, [activeTeamLabels, players, playersPerTeam, teamMode]);
   const playerInputPlaceholder = teamMode
     ? nextTeamSlot
       ? `Add ${nextTeamSlot.teamName} player ${nextTeamSlot.playerNumber}`
@@ -254,12 +245,7 @@ export default function CreateMatchScreen() {
       const labels = getTeamLabels(teamCount, teamLabels);
 
       setPlayersPerTeam(requiredPlayersPerTeam);
-      setPlayers((currentPlayers) =>
-        currentPlayers.map((player, index) => ({
-          ...player,
-          teamName: labels[Math.min(Math.floor(index / requiredPlayersPerTeam), labels.length - 1)],
-        })),
-      );
+      setPlayers((currentPlayers) => assignPlayersToTeams(currentPlayers, labels));
       return;
     }
 
@@ -384,17 +370,8 @@ export default function CreateMatchScreen() {
     const matchPlayers: Player[] = teamMode ? players : players.map((player) => ({ id: player.id, name: player.name }));
 
     if (teamMode) {
-      const activeTeams = new Set(matchPlayers.map((player) => player.teamName).filter(Boolean));
-
-      if (activeTeams.size < 2) {
+      if (getActiveTeamCount(matchPlayers) < 2) {
         Alert.alert('Add two teams', 'Team scoring needs at least one player on two teams.');
-        return;
-      }
-
-      const incompleteTeam = activeTeamLabels.find((teamName) => matchPlayers.filter((player) => player.teamName === teamName).length !== playersPerTeam);
-
-      if (incompleteTeam) {
-        Alert.alert('Fill team slots', `${incompleteTeam} needs ${playersPerTeam} player${playersPerTeam === 1 ? '' : 's'}.`);
         return;
       }
     }
@@ -430,32 +407,52 @@ export default function CreateMatchScreen() {
         keyboardShouldPersistTaps="handled">
       <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
         <Text style={styles.title}>{t('createMatch')}</Text>
-        <Text style={styles.subtitle}>Choose a game, add players, and start scoring.</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/matches/app-settings' as Href)}
+          style={({ pressed }) => [styles.heroIconButton, pressed && styles.pressed]}>
+          <Ionicons name="settings-outline" size={15} color="#FFFFFF" />
+        </Pressable>
       </View>
 
       <View style={styles.card}>
-        <Pressable
-          accessibilityLabel={isGameLibraryOpen ? 'Collapse game library' : 'Expand game library'}
-          accessibilityRole="button"
-          onPress={() => setIsGameLibraryOpen((value) => !value)}
-          style={({ pressed }) => [
-            styles.compactSectionHeader,
-            isGameLibraryOpen && styles.compactSectionHeaderOpen,
-            pressed && styles.pressed,
-          ]}>
-          <View style={styles.compactSectionText}>
-            <Text style={styles.label}>{t('selectGame')}</Text>
-            <Text numberOfLines={1} style={styles.compactSectionHint}>{selectedGamePreset ? selectedGamePreset.title : t('customScorekeeper')}</Text>
-          </View>
-          {selectedGamePreset ? (
-            <Pressable accessibilityRole="button" onPress={() => setRulesModalPresetId(selectedGamePreset.id)} style={({ pressed }) => [styles.rulesButton, pressed && styles.pressed]}>
-              <Text style={styles.rulesButtonText}>Rules</Text>
-            </Pressable>
-          ) : null}
-          <View style={styles.compactButton}>
-            <Text style={styles.compactButtonText}>{isGameLibraryOpen ? '↑' : '↓'}</Text>
-          </View>
-        </Pressable>
+        <View style={styles.setupPickerRow}>
+          <Pressable
+            accessibilityLabel={isGameLibraryOpen ? 'Collapse game library' : 'Expand game library'}
+            accessibilityRole="button"
+            onPress={() => setIsGameLibraryOpen((value) => !value)}
+            style={({ pressed }) => [
+              styles.setupPickerCell,
+              isGameLibraryOpen && styles.compactSectionHeaderOpen,
+              pressed && styles.pressed,
+            ]}>
+            <View style={styles.compactSectionText}>
+              <Text style={styles.label}>{t('selectGame')}</Text>
+              <Text numberOfLines={1} style={styles.compactSectionHint}>{selectedGamePreset ? selectedGamePreset.title : t('customScorekeeper')}</Text>
+            </View>
+            <View style={styles.compactButton}>
+              <Text style={styles.compactButtonText}>{isGameLibraryOpen ? '↑' : '↓'}</Text>
+            </View>
+          </Pressable>
+
+          <Pressable
+            accessibilityLabel={isScoringOpen ? 'Collapse scoring styles' : 'Expand scoring styles'}
+            accessibilityRole="button"
+            onPress={() => setIsScoringOpen((value) => !value)}
+            style={({ pressed }) => [
+              styles.setupPickerCell,
+              isScoringOpen && styles.compactSectionHeaderOpen,
+              pressed && styles.pressed,
+            ]}>
+            <View style={styles.compactSectionText}>
+              <Text style={styles.label}>{t('scoringStyle')}</Text>
+              <Text numberOfLines={1} style={styles.compactSectionHint}>{selectedPreset.title}</Text>
+            </View>
+            <View style={styles.compactButton}>
+              <Text style={styles.compactButtonText}>{isScoringOpen ? '↑' : '↓'}</Text>
+            </View>
+          </Pressable>
+        </View>
 
         {isGameLibraryOpen ? (
           <>
@@ -533,24 +530,6 @@ export default function CreateMatchScreen() {
           </>
         ) : null}
 
-        <Pressable
-          accessibilityLabel={isScoringOpen ? 'Collapse scoring styles' : 'Expand scoring styles'}
-          accessibilityRole="button"
-          onPress={() => setIsScoringOpen((value) => !value)}
-          style={({ pressed }) => [
-            styles.compactSectionHeader,
-            isScoringOpen && styles.compactSectionHeaderOpen,
-            pressed && styles.pressed,
-          ]}>
-          <View style={styles.compactSectionText}>
-            <Text style={styles.label}>{t('scoringStyle')}</Text>
-            <Text numberOfLines={1} style={styles.compactSectionHint}>{selectedPreset.title}</Text>
-          </View>
-          <View style={styles.compactButton}>
-            <Text style={styles.compactButtonText}>{isScoringOpen ? '↑' : '↓'}</Text>
-          </View>
-        </Pressable>
-
         {isScoringOpen ? (
           <>
             <View style={styles.presetList}>
@@ -570,7 +549,7 @@ export default function CreateMatchScreen() {
                     ]}>
                     <View style={styles.presetTextBlock}>
                       <Text style={[styles.presetTitle, isSelected && styles.presetTitleSelected, isSelected && { color: theme.colors.secondaryText }]}>{preset.title}</Text>
-                      <Text style={[styles.presetDescription, isSelected && styles.presetDescriptionSelected, isSelected && { color: theme.colors.secondaryText }]}>{preset.description}</Text>
+                      <Text numberOfLines={1} style={[styles.presetDescription, isSelected && styles.presetDescriptionSelected, isSelected && { color: theme.colors.secondaryText }]}>{preset.description}</Text>
                     </View>
                     <View style={[styles.presetDot, isSelected && styles.presetDotSelected, isSelected && { borderColor: theme.colors.secondaryText, backgroundColor: theme.colors.accent }]} />
                   </Pressable>
@@ -596,23 +575,21 @@ export default function CreateMatchScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.label}>{t('matchName')}</Text>
         <TextInput
           autoCapitalize="words"
           onChangeText={setMatchName}
           onSubmitEditing={focusPlayerNameInput}
-          placeholder="Optional - auto names Match 1"
+          placeholder="Optional match name"
           placeholderTextColor="#94A3B8"
           returnKeyType="next"
           style={styles.input}
           value={matchName}
         />
-        <Text style={styles.helperText}>Leave blank to generate a simple name automatically.</Text>
 
         <View style={styles.teamModePanel}>
           <View style={styles.teamModeHeader}>
             <Text style={styles.teamModeTitle}>Scoring mode</Text>
-            <Text style={styles.teamModeText}>{teamMode ? `${teamCount} teams - ${playersPerTeam} players each` : 'Track each player separately.'}</Text>
+            <Text numberOfLines={1} style={styles.teamModeText}>{teamMode ? `${teamCount} teams - ${playersPerTeam} each` : 'Individual players'}</Text>
           </View>
           <View style={styles.segmentedControl}>
             <Pressable
@@ -676,7 +653,6 @@ export default function CreateMatchScreen() {
                 </View>
               </View>
             </View>
-            <Text style={styles.helperText}>Long press a team or player name to edit. Long press a player to delete.</Text>
           </View>
         ) : null}
 
@@ -703,7 +679,7 @@ export default function CreateMatchScreen() {
         {availableSavedPlayers.length > 0 ? (
           <View style={styles.savedPlayersPanel}>
             <View style={styles.savedPlayersHeader}>
-              <Text style={styles.savedPlayersTitle}>Quick add saved players</Text>
+              <Text style={styles.savedPlayersTitle}>Saved players</Text>
               <Pressable accessibilityRole="button" onPress={handleClearSavedPlayers} style={({ pressed }) => [styles.clearSavedPlayersButton, pressed && styles.pressed]}>
                 <Text style={styles.clearSavedPlayersButtonText}>Clear all</Text>
               </Pressable>
@@ -761,9 +737,7 @@ export default function CreateMatchScreen() {
             ))}
           </View>
         ) : players.length === 0 ? (
-          <View style={styles.inlineEmpty}>
-            <Text style={styles.inlineEmptyText}>Add at least two players.</Text>
-          </View>
+          null
         ) : (
           <View style={styles.playersList}>
             {players.map((player, index) => (
@@ -867,19 +841,23 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    gap: 12,
+    gap: 7,
     width: '100%',
     maxWidth: 760,
     alignSelf: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    paddingBottom: 26,
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 18,
   },
   heroCard: {
-    gap: 4,
+    gap: 8,
     borderRadius: 8,
     backgroundColor: '#172033',
-    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.14,
@@ -893,10 +871,19 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
+    flex: 1,
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 16,
     fontWeight: '900',
-    lineHeight: 27,
+    lineHeight: 20,
+  },
+  heroIconButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   subtitle: {
     color: '#CBD5E1',
@@ -904,10 +891,10 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   card: {
-    gap: 9,
+    gap: 6,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 12,
+    padding: 8,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
@@ -916,20 +903,21 @@ const styles = StyleSheet.create({
   },
   label: {
     color: '#334155',
-    fontSize: 13,
-    fontWeight: '800',
-    marginTop: 2,
+    fontSize: 10,
+    fontWeight: '900',
+    lineHeight: 12,
+    textTransform: 'uppercase',
   },
   input: {
-    minHeight: 44,
+    minHeight: 36,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#D8DEE8',
     backgroundColor: '#F8FAFC',
     color: '#111827',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
   },
   helperText: {
     color: '#64748B',
@@ -937,7 +925,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   compactSectionHeader: {
-    minHeight: 44,
+    minHeight: 38,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -946,8 +934,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  setupPickerRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  setupPickerCell: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 40,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D8DEE8',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   compactSectionHeaderOpen: {
     backgroundColor: '#F8FAFC',
@@ -955,16 +962,17 @@ const styles = StyleSheet.create({
   },
   compactSectionText: {
     flex: 1,
-    gap: 3,
+    minWidth: 0,
+    gap: 2,
   },
   compactSectionHint: {
     color: '#64748B',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
   },
   compactButton: {
-    width: 32,
-    height: 32,
+    width: 24,
+    height: 24,
     borderRadius: 999,
     backgroundColor: '#111827',
     alignItems: 'center',
@@ -972,7 +980,7 @@ const styles = StyleSheet.create({
   },
   compactButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '900',
   },
   rulesOverlay: {
@@ -1014,38 +1022,38 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   gamePresetList: {
-    gap: 4,
+    gap: 3,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     backgroundColor: '#FFFFFF',
-    padding: 6,
+    padding: 5,
   },
   categoryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    paddingBottom: 4,
+    gap: 4,
+    paddingBottom: 2,
   },
   categoryChip: {
     borderRadius: 999,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     backgroundColor: '#F8FAFC',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   categoryChipText: {
     color: '#64748B',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '900',
   },
   gamePresetCard: {
-    gap: 4,
+    gap: 3,
     borderRadius: 6,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 8,
-    paddingVertical: 7,
+    paddingHorizontal: 7,
+    paddingVertical: 5,
   },
   emptyGamePresetCard: {
     gap: 4,
@@ -1079,30 +1087,30 @@ const styles = StyleSheet.create({
   gamePresetTitle: {
     flex: 1,
     color: '#111827',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
   },
   gamePresetCategoryText: {
     color: '#64748B',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
   gamePresetDescription: {
     color: '#64748B',
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 10,
+    lineHeight: 13,
   },
   rulesButton: {
     alignSelf: 'flex-start',
     borderRadius: 999,
     backgroundColor: '#E2E8F0',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   rulesButtonText: {
     color: '#334155',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '900',
   },
   rulesCard: {
@@ -1149,51 +1157,55 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   presetList: {
-    gap: 4,
+    gap: 3,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     backgroundColor: '#FFFFFF',
-    padding: 6,
+    padding: 5,
   },
   presetCard: {
-    minHeight: 50,
+    minHeight: 34,
     borderRadius: 6,
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
+    gap: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 5,
   },
   presetCardSelected: {
     backgroundColor: '#ECFDF5',
   },
   presetTextBlock: {
     flex: 1,
-    gap: 4,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   presetTitle: {
     color: '#111827',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
   },
   presetTitleSelected: {
     color: '#0F766E',
   },
   presetDescription: {
+    flex: 1,
     color: '#64748B',
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 10,
+    lineHeight: 13,
   },
   presetDescriptionSelected: {
     color: '#0F766E',
   },
   presetDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     borderWidth: 2,
     borderColor: '#CBD5E1',
   },
@@ -1203,48 +1215,53 @@ const styles = StyleSheet.create({
   },
   addRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   teamModePanel: {
-    minHeight: 86,
+    minHeight: 0,
     borderRadius: 8,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    gap: 8,
-    padding: 10,
+    gap: 6,
+    padding: 7,
   },
   teamModeHeader: {
-    gap: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   teamModeTitle: {
     color: '#111827',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '900',
   },
   teamModeText: {
+    flex: 1,
+    textAlign: 'right',
     color: '#64748B',
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 13,
   },
   segmentedControl: {
-    minHeight: 42,
+    minHeight: 32,
     borderRadius: 8,
     backgroundColor: '#E8EEF5',
     flexDirection: 'row',
-    gap: 4,
-    padding: 4,
+    gap: 3,
+    padding: 3,
   },
   segmentButton: {
     flex: 1,
-    minHeight: 34,
+    minHeight: 26,
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   segmentButtonText: {
     color: '#64748B',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
   },
   segmentButtonTextActive: {
@@ -1267,16 +1284,16 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   teamSetupPanel: {
-    gap: 8,
+    gap: 6,
     borderRadius: 8,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 10,
+    padding: 7,
   },
   teamSetupRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   stepperCard: {
     flex: 1,
@@ -1289,7 +1306,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   stepperControls: {
-    minHeight: 38,
+    minHeight: 32,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -1300,24 +1317,24 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   stepperButton: {
-    width: 38,
-    minHeight: 38,
+    width: 32,
+    minHeight: 32,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F1F5F9',
   },
   stepperButtonText: {
     color: '#334155',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '900',
   },
   stepperValue: {
     color: '#111827',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '900',
   },
   teamTable: {
-    gap: 8,
+    gap: 6,
   },
   teamRosterRow: {
     borderRadius: 8,
@@ -1391,12 +1408,12 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   savedPlayersPanel: {
-    gap: 8,
+    gap: 6,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E8EEF5',
     backgroundColor: '#FFFFFF',
-    padding: 10,
+    padding: 7,
   },
   savedPlayersHeader: {
     flexDirection: 'row',
@@ -1407,56 +1424,56 @@ const styles = StyleSheet.create({
   savedPlayersTitle: {
     flex: 1,
     color: '#334155',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
   clearSavedPlayersButton: {
     borderRadius: 999,
     backgroundColor: '#FEE2E2',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   clearSavedPlayersButtonText: {
     color: '#B91C1C',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '900',
   },
   savedPlayerChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 5,
   },
   savedPlayerChip: {
     borderRadius: 999,
     backgroundColor: '#E0F2FE',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   savedPlayerChipText: {
     color: '#0369A1',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '900',
   },
   playerInput: {
     flex: 1,
-    minHeight: 52,
+    minHeight: 38,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#D8DEE8',
     backgroundColor: '#F8FAFC',
     color: '#111827',
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: '700',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
   },
   disabledPlayerInput: {
     backgroundColor: '#E8EEF5',
     color: '#94A3B8',
   },
   addButton: {
-    minWidth: 86,
-    minHeight: 52,
+    minWidth: 68,
+    minHeight: 38,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1464,7 +1481,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '900',
   },
   inlineEmpty: {
@@ -1478,21 +1495,21 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   playersList: {
-    gap: 8,
+    gap: 6,
   },
   playerRow: {
-    minHeight: 54,
+    minHeight: 42,
     borderRadius: 8,
     backgroundColor: '#F3F7FB',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
   playerName: {
     color: '#111827',
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '800',
   },
   playerTextBlock: {
@@ -1512,8 +1529,8 @@ const styles = StyleSheet.create({
   editButton: {
     borderRadius: 8,
     backgroundColor: '#E0F2FE',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   editButtonText: {
     color: '#0369A1',
@@ -1523,8 +1540,8 @@ const styles = StyleSheet.create({
   deleteButton: {
     borderRadius: 8,
     backgroundColor: '#FEE2E2',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   deleteButtonText: {
     color: '#B91C1C',
@@ -1532,7 +1549,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   primaryButton: {
-    minHeight: 54,
+    minHeight: 40,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1545,13 +1562,13 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '900',
   },
   startMatchFooter: {
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 8,
+    padding: 6,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,

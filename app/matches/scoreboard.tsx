@@ -1,7 +1,7 @@
 import { useFocusEffect, router, useLocalSearchParams, type Href } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import { getGamePreset } from '@/features/matches/gamePresets';
 import { createId, createReplayMatch } from '@/features/matches/matchFactory';
@@ -70,6 +70,7 @@ export default function ScoreboardScreen() {
   const [isSummaryVisible, setIsSummaryVisible] = useState(false);
   const [isRoundDraftHydrated, setIsRoundDraftHydrated] = useState(false);
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
+  const [isOverallScoreOpen, setIsOverallScoreOpen] = useState(false);
 
   const loadMatch = useCallback(() => {
     let isActive = true;
@@ -129,29 +130,6 @@ export default function ScoreboardScreen() {
       }
     };
   }, []);
-
-  async function handleDeleteRound(roundId: string) {
-    if (!matchId) {
-      return;
-    }
-
-    if (match?.status === 'completed') {
-      Alert.alert('Match completed', 'Reopen this match before editing rounds.');
-      return;
-    }
-
-    Alert.alert('Delete round?', 'This will remove the round and recalculate totals.', [
-      { text: t('cancel'), style: 'cancel' },
-      {
-        text: t('delete'),
-        style: 'destructive',
-        onPress: async () => {
-          const updatedMatch = await deleteRound(matchId, roundId);
-          setMatch(updatedMatch);
-        },
-      },
-    ]);
-  }
 
   async function handleSaveRound() {
     if (!match || !matchId) {
@@ -397,6 +375,12 @@ export default function ScoreboardScreen() {
 
     return first.playerName.localeCompare(second.playerName);
   });
+
+  const getPendingScore = (playerId: string) => parseScoreInput(scoresByPlayer[playerId] ?? '') ?? 0;
+
+  const getPreviewTotal = (standing: PlayerStanding) =>
+    standing.isOut || isCompleted ? standing.total : standing.total + getPendingScore(standing.player.id);
+
   const teamScoreRows = Array.from(new Set(match.players.map((player) => player.teamName).filter((teamName): teamName is string => Boolean(teamName)))).map((teamName) => {
     const teamStanding = teamStandings.find((team) => team.teamName === teamName);
     const playerStandings = standings.filter((standing) => standing.player.teamName === teamName);
@@ -410,14 +394,6 @@ export default function ScoreboardScreen() {
       players: playerStandings,
     };
   });
-
-  function getPendingScore(playerId: string) {
-    return parseScoreInput(scoresByPlayer[playerId] ?? '') ?? 0;
-  }
-
-  function getPreviewTotal(standing: PlayerStanding) {
-    return standing.isOut || isCompleted ? standing.total : standing.total + getPendingScore(standing.player.id);
-  }
 
   function renderScoreEntryCell(standing: PlayerStanding) {
     const isSelected = selectedPlayerId === standing.player.id;
@@ -481,6 +457,12 @@ export default function ScoreboardScreen() {
               <Text style={styles.roundPillText}>{match.rounds.length} rounds</Text>
             </View>
           </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push(`/matches/settings?matchId=${encodeURIComponent(matchId)}` as Href)}
+            style={({ pressed }) => [styles.heroIconButton, pressed && styles.pressed]}>
+            <Ionicons name="settings-outline" size={15} color="#FFFFFF" />
+          </Pressable>
         </View>
 
         <View style={styles.limitPanel}>
@@ -539,12 +521,6 @@ export default function ScoreboardScreen() {
           <Pressable accessibilityRole="button" onPress={handleShareSummary} style={({ pressed }) => [styles.shareButton, { backgroundColor: theme.colors.secondary }, pressed && styles.pressed]}>
             <Text style={[styles.shareButtonText, { color: theme.colors.secondaryText }]}>{t('share')}</Text>
           </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push(`/matches/settings?matchId=${encodeURIComponent(matchId)}` as Href)}
-            style={({ pressed }) => [styles.settingsButton, { backgroundColor: theme.colors.softAccent }, pressed && styles.pressed]}>
-            <Text style={[styles.settingsButtonText, { color: theme.colors.secondaryText }]}>{t('settings')}</Text>
-          </Pressable>
           {isCompleted ? (
             <Pressable accessibilityRole="button" onPress={handleReopenMatch} style={({ pressed }) => [styles.reopenButton, { backgroundColor: theme.colors.secondary }, pressed && styles.pressed]}>
               <Text style={[styles.reopenButtonText, { color: theme.colors.secondaryText }]}>{t('reopen')}</Text>
@@ -571,10 +547,9 @@ export default function ScoreboardScreen() {
         <View style={styles.entryCard}>
           <View style={styles.entryHeader}>
             <Text style={styles.entryTitle}>New round</Text>
-            <Text style={styles.entryHint}>Enter each active player score. Empty scores save as 0.</Text>
-            {draftSavedAt ? <Text style={styles.draftSavedText}>{formatDraftSavedLabel(draftSavedAt)}</Text> : null}
+            <Text numberOfLines={1} style={styles.scoreTipText}>Hold a score for negative value.</Text>
           </View>
-          <Text style={styles.scoreTipText}>Tip: Hold a score to enter a negative value.</Text>
+          {draftSavedAt ? <Text style={styles.draftSavedText}>{formatDraftSavedLabel(draftSavedAt)}</Text> : null}
 
           {isTeamMatch ? (
             <View style={styles.teamEntryList}>
@@ -611,54 +586,60 @@ export default function ScoreboardScreen() {
         </View>
       )}
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Scoreboard</Text>
-      </View>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => setIsOverallScoreOpen((value) => !value)}
+        style={({ pressed }) => [styles.sectionToggleHeader, pressed && styles.pressed]}>
+        <Text style={styles.sectionTitle}>Overall score</Text>
+        <Ionicons name={isOverallScoreOpen ? 'chevron-up' : 'chevron-down'} size={16} color="#334155" />
+      </Pressable>
 
-      {isTeamMatch ? (
-        <View style={styles.teamScoreTable}>
-          {teamScoreRows.map((team) => (
-            <View key={team.teamName} style={[styles.teamScoreRow, team.isLeader && styles.teamScoreLeaderRow]}>
-              <View style={[styles.teamScoreHeader, team.isLeader && styles.teamScoreLeaderHeader]}>
-                <View style={styles.teamScoreHeaderText}>
-                  <Text style={styles.teamScoreName}>{team.teamName}</Text>
-                  <Text style={styles.teamScoreMeta}>
-                    {team.players.length} players{team.isLeader ? ' - Leader' : ''}
-                  </Text>
-                </View>
-                <Text style={styles.teamScoreTotal}>{team.previewTotal}</Text>
-              </View>
-              <View style={styles.teamScoreSlots}>
-                {team.players.map((standing) => (
-                  <View key={standing.player.id} style={[styles.teamScorePlayerCell, standing.isOut && styles.teamScorePlayerCellOut]}>
-                    <Text style={[styles.teamScorePlayerName, standing.isOut && styles.teamScorePlayerNameOut]} numberOfLines={1}>
-                      {standing.player.name}
+      {isOverallScoreOpen ? (
+        isTeamMatch ? (
+          <View style={styles.teamScoreTable}>
+            {teamScoreRows.map((team) => (
+              <View key={team.teamName} style={[styles.teamScoreRow, team.isLeader && styles.teamScoreLeaderRow]}>
+                <View style={[styles.teamScoreHeader, team.isLeader && styles.teamScoreLeaderHeader]}>
+                  <View style={styles.teamScoreHeaderText}>
+                    <Text style={styles.teamScoreName}>{team.teamName}</Text>
+                    <Text style={styles.teamScoreMeta}>
+                      {team.players.length} players{team.isLeader ? ' - Leader' : ''}
                     </Text>
-                    <Text style={[styles.teamScorePlayerTotal, standing.isOut && styles.teamScorePlayerNameOut]}>{getPreviewTotal(standing)}</Text>
                   </View>
-                ))}
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <View style={styles.standingsList}>
-          {standings.map((standing) => (
-            <View key={standing.player.id} style={styles.playerCard}>
-              <View style={styles.playerInfo}>
-                <Text style={styles.playerName}>{standing.player.name}</Text>
-                {standing.player.teamName ? <Text style={styles.playerTeamName}>{standing.player.teamName}</Text> : null}
-                <View style={[styles.statusChip, standing.isWinner ? styles.winnerChip : standing.isOut ? styles.outChip : standing.isLeader ? styles.leaderChip : styles.activeChip]}>
-                  <Text style={[styles.statusText, standing.isWinner ? styles.winnerText : standing.isOut ? styles.outText : standing.isLeader ? styles.leaderText : styles.activeText]}>
-                    {standing.isWinner ? 'Winner' : standing.isOut ? 'Out' : standing.isLeader ? 'Leader' : 'Active'}
-                  </Text>
+                  <Text style={styles.teamScoreTotal}>{team.previewTotal}</Text>
+                </View>
+                <View style={styles.teamScoreSlots}>
+                  {team.players.map((standing) => (
+                    <View key={standing.player.id} style={[styles.teamScorePlayerCell, standing.isOut && styles.teamScorePlayerCellOut]}>
+                      <Text style={[styles.teamScorePlayerName, standing.isOut && styles.teamScorePlayerNameOut]} numberOfLines={1}>
+                        {standing.player.name}
+                      </Text>
+                      <Text style={[styles.teamScorePlayerTotal, standing.isOut && styles.teamScorePlayerNameOut]}>{getPreviewTotal(standing)}</Text>
+                    </View>
+                  ))}
                 </View>
               </View>
-              <Text style={styles.totalScore}>{getPreviewTotal(standing)}</Text>
-            </View>
-          ))}
-        </View>
-      )}
+            ))}
+          </View>
+        ) : (
+          <View style={styles.standingsList}>
+            {standings.map((standing) => (
+              <View key={standing.player.id} style={styles.playerCard}>
+                <View style={styles.playerInfo}>
+                  <Text style={styles.playerName}>{standing.player.name}</Text>
+                  {standing.player.teamName ? <Text style={styles.playerTeamName}>{standing.player.teamName}</Text> : null}
+                  <View style={[styles.statusChip, standing.isWinner ? styles.winnerChip : standing.isOut ? styles.outChip : standing.isLeader ? styles.leaderChip : styles.activeChip]}>
+                    <Text style={[styles.statusText, standing.isWinner ? styles.winnerText : standing.isOut ? styles.outText : standing.isLeader ? styles.leaderText : styles.activeText]}>
+                      {standing.isWinner ? 'Winner' : standing.isOut ? 'Out' : standing.isLeader ? 'Leader' : 'Active'}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.totalScore}>{getPreviewTotal(standing)}</Text>
+              </View>
+            ))}
+          </View>
+        )
+      ) : null}
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Round history</Text>
@@ -674,67 +655,15 @@ export default function ScoreboardScreen() {
           {[...match.rounds].reverse().map((round, reverseIndex) => {
             const roundNumber = match.rounds.length - reverseIndex;
 
-            const roundContent = (
-              <View style={styles.roundCard}>
+            return (
+              <View key={round.id} style={styles.roundCard}>
                 <View style={styles.roundHeader}>
                   <Text style={styles.roundTitle}>Round {roundNumber}</Text>
                   {isCompleted ? <Text style={styles.roundHint}>Locked</Text> : null}
                 </View>
-                <Text numberOfLines={2} style={styles.roundScores}>{formatRoundScore(match, round)}</Text>
+                <Text numberOfLines={1} style={styles.roundScores}>{formatRoundScore(match, round)}</Text>
                 <Text numberOfLines={1} style={styles.roundScanSummary}>{getRoundScanSummary(match, round)}</Text>
-                {!isCompleted ? (
-                  <View style={styles.roundInlineActions}>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() =>
-                        router.push(
-                          `/matches/edit-round?matchId=${encodeURIComponent(matchId)}&roundId=${encodeURIComponent(round.id)}` as Href,
-                        )
-                      }
-                      style={({ pressed }) => [styles.roundInlineEditButton, pressed && styles.pressed]}>
-                      <Text style={styles.roundInlineEditText}>{t('edit')}</Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() => handleDeleteRound(round.id)}
-                      style={({ pressed }) => [styles.roundInlineDeleteButton, pressed && styles.pressed]}>
-                      <Text style={styles.roundInlineDeleteText}>{t('delete')}</Text>
-                    </Pressable>
-                  </View>
-                ) : null}
               </View>
-            );
-
-            if (isCompleted) {
-              return <View key={round.id}>{roundContent}</View>;
-            }
-
-            return (
-              <Swipeable
-                key={round.id}
-                overshootRight={false}
-                renderRightActions={() => (
-                  <View style={styles.roundSwipeActions}>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() =>
-                        router.push(
-                          `/matches/edit-round?matchId=${encodeURIComponent(matchId)}&roundId=${encodeURIComponent(round.id)}` as Href,
-                        )
-                      }
-                      style={({ pressed }) => [styles.roundSwipeEditAction, pressed && styles.pressed]}>
-                      <Text style={styles.roundSwipeActionText}>{t('edit')}</Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() => handleDeleteRound(round.id)}
-                      style={({ pressed }) => [styles.roundSwipeDeleteAction, pressed && styles.pressed]}>
-                      <Text style={styles.roundSwipeActionText}>{t('delete')}</Text>
-                    </Pressable>
-                  </View>
-                )}>
-                {roundContent}
-              </Swipeable>
             );
           })}
         </View>
@@ -1037,10 +966,10 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   heroCard: {
-    gap: 5,
+    gap: 4,
     borderRadius: 8,
     backgroundColor: '#172033',
-    padding: 8,
+    padding: 7,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
@@ -1066,9 +995,17 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '900',
-    lineHeight: 24,
+    lineHeight: 20,
+  },
+  heroIconButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pillStack: {
     flexDirection: 'row',
@@ -1317,12 +1254,12 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   entryCard: {
-    gap: 9,
+    gap: 6,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D8F3EA',
-    padding: 10,
+    padding: 8,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 7 },
     shadowOpacity: 0.08,
@@ -1330,11 +1267,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   entryHeader: {
-    gap: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   entryTitle: {
     color: '#111827',
-    fontSize: 19,
+    fontSize: 15,
     fontWeight: '900',
   },
   entryHint: {
@@ -1343,8 +1283,10 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   scoreTipText: {
+    flexShrink: 1,
+    textAlign: 'right',
     color: '#475569',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
   },
   draftSavedText: {
@@ -1353,7 +1295,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   teamEntryList: {
-    gap: 8,
+    gap: 6,
   },
   teamEntryGroup: {
     borderRadius: 8,
@@ -1366,7 +1308,7 @@ const styles = StyleSheet.create({
     borderColor: '#14B8A6',
   },
   teamEntryHeader: {
-    minHeight: 34,
+    minHeight: 30,
     backgroundColor: '#111827',
     flexDirection: 'row',
     alignItems: 'center',
@@ -1383,7 +1325,7 @@ const styles = StyleSheet.create({
   },
   teamEntryName: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
   },
   teamEntryMeta: {
@@ -1393,26 +1335,26 @@ const styles = StyleSheet.create({
   },
   teamEntryTotal: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '900',
   },
   scoreEntryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    padding: 6,
+    gap: 5,
+    padding: 5,
   },
   scoreEntryCard: {
     flexGrow: 1,
     flexBasis: '47%',
-    minWidth: 138,
-    minHeight: 62,
+    minWidth: 126,
+    minHeight: 48,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
-    padding: 8,
+    padding: 6,
   },
   selectedEntryCard: {
     backgroundColor: '#E0F2FE',
@@ -1434,7 +1376,7 @@ const styles = StyleSheet.create({
   },
   scoreEntryName: {
     color: '#111827',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '900',
   },
   scoreEntryMeta: {
@@ -1472,14 +1414,14 @@ const styles = StyleSheet.create({
     color: '#0369A1',
   },
   scoreInput: {
-    width: 72,
-    minHeight: 48,
+    width: 58,
+    minHeight: 36,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#D8DEE8',
     backgroundColor: '#FFFFFF',
     color: '#111827',
-    fontSize: 23,
+    fontSize: 18,
     fontWeight: '900',
     textAlign: 'center',
   },
@@ -1494,12 +1436,12 @@ const styles = StyleSheet.create({
   },
   roundActionRow: {
     flexDirection: 'row',
-    gap: 7,
+    gap: 6,
   },
   clearDraftButton: {
     flex: 0.9,
     minWidth: 68,
-    minHeight: 40,
+    minHeight: 34,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1509,7 +1451,7 @@ const styles = StyleSheet.create({
   },
   clearDraftButtonText: {
     color: '#475569',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '900',
   },
   nextPlayerButton: {
@@ -1529,7 +1471,7 @@ const styles = StyleSheet.create({
   undoButton: {
     flex: 0.9,
     minWidth: 68,
-    minHeight: 40,
+    minHeight: 34,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1539,24 +1481,35 @@ const styles = StyleSheet.create({
   },
   undoButtonText: {
     color: '#C2410C',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '900',
   },
   sectionHeader: {
     marginTop: 2,
   },
+  sectionToggleHeader: {
+    minHeight: 36,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+  },
   sectionTitle: {
     color: '#111827',
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: '900',
   },
   standingsList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   teamScoreTable: {
-    gap: 7,
+    gap: 6,
   },
   teamScoreRow: {
     borderRadius: 8,
@@ -1574,7 +1527,7 @@ const styles = StyleSheet.create({
     borderColor: '#14B8A6',
   },
   teamScoreHeader: {
-    minHeight: 34,
+    minHeight: 30,
     backgroundColor: '#111827',
     flexDirection: 'row',
     alignItems: 'center',
@@ -1591,7 +1544,7 @@ const styles = StyleSheet.create({
   },
   teamScoreName: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
   },
   teamScoreMeta: {
@@ -1601,27 +1554,27 @@ const styles = StyleSheet.create({
   },
   teamScoreTotal: {
     color: '#FFFFFF',
-    fontSize: 19,
+    fontSize: 16,
     fontWeight: '900',
   },
   teamScoreSlots: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 5,
-    padding: 7,
+    gap: 4,
+    padding: 5,
   },
   teamScorePlayerCell: {
     flexGrow: 1,
     flexBasis: '30%',
     minWidth: 92,
-    minHeight: 36,
+    minHeight: 30,
     borderRadius: 8,
     backgroundColor: '#E0F2FE',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    paddingHorizontal: 9,
+    paddingHorizontal: 7,
   },
   teamScorePlayerCellOut: {
     backgroundColor: '#E8EEF5',
@@ -1629,7 +1582,7 @@ const styles = StyleSheet.create({
   teamScorePlayerName: {
     flex: 1,
     color: '#0F172A',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '900',
   },
   teamScorePlayerNameOut: {
@@ -1637,7 +1590,7 @@ const styles = StyleSheet.create({
   },
   teamScorePlayerTotal: {
     color: '#0369A1',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '900',
   },
   teamList: {
@@ -1692,14 +1645,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexBasis: '47%',
     minWidth: 150,
-    minHeight: 62,
+    minHeight: 48,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    padding: 9,
+    padding: 7,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -1708,30 +1661,30 @@ const styles = StyleSheet.create({
   },
   playerInfo: {
     flex: 1,
-    gap: 4,
+    gap: 3,
   },
   playerName: {
     color: '#111827',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '900',
   },
   playerTeamName: {
     alignSelf: 'flex-start',
     color: '#64748B',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
   totalScore: {
     color: '#111827',
-    fontSize: 23,
+    fontSize: 18,
     fontWeight: '900',
   },
   statusChip: {
     alignSelf: 'flex-start',
     borderRadius: 999,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
   activeChip: {
     backgroundColor: '#D9F9F3',
@@ -1746,7 +1699,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
   },
   statusText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '900',
   },
   activeText: {
@@ -1764,7 +1717,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     flex: 1.8,
     minWidth: 80,
-    minHeight: 50,
+    minHeight: 38,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1777,33 +1730,33 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '900',
   },
   emptyCard: {
-    gap: 6,
+    gap: 4,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 14,
+    padding: 10,
   },
   emptyTitle: {
     color: '#111827',
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '800',
   },
   emptyText: {
     color: '#64748B',
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 12,
+    lineHeight: 17,
   },
   roundList: {
-    gap: 7,
+    gap: 6,
   },
   roundCard: {
-    gap: 6,
+    gap: 4,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 10,
+    padding: 8,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -1818,7 +1771,7 @@ const styles = StyleSheet.create({
   },
   roundTitle: {
     color: '#111827',
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '900',
   },
   roundHint: {

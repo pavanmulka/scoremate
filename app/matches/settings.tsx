@@ -284,9 +284,7 @@ export default function MatchSettingsScreen() {
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         keyboardShouldPersistTaps="handled">
         <View style={[styles.heroCard, { backgroundColor: theme.colors.hero }]}>
-          <Text style={[styles.kicker, { color: theme.colors.accent }]}>Match setup</Text>
           <Text style={styles.title}>{t('settings')}</Text>
-          <Text style={styles.subtitle}>Rename the match or adjust the scoring setup.</Text>
         </View>
 
         <View style={styles.card}>
@@ -338,11 +336,10 @@ export default function MatchSettingsScreen() {
               style={styles.addPlayerInput}
               value={newPlayerName}
             />
-            <Pressable accessibilityRole="button" onPress={handleAddPlayer} style={({ pressed }) => [styles.addPlayerButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
+          <Pressable accessibilityRole="button" onPress={handleAddPlayer} style={({ pressed }) => [styles.addPlayerButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
               <Text style={styles.addPlayerButtonText}>{t('add')}</Text>
             </Pressable>
           </View>
-          <Text style={styles.helperText}>Late players start at 0 for earlier rounds.</Text>
 
           <View style={styles.playerTeamList}>
             {players.map((player, index) => (
@@ -382,7 +379,7 @@ export default function MatchSettingsScreen() {
                 pressed && styles.pressed,
               ]}>
               <Text style={[styles.optionTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>{t('customScorekeeper')}</Text>
-              <Text style={[styles.optionDescription, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>
+              <Text numberOfLines={1} style={[styles.optionDescription, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>
                 Choose scoring style manually.
               </Text>
             </Pressable>
@@ -401,7 +398,7 @@ export default function MatchSettingsScreen() {
                       <Text style={[styles.optionTitle, isSelected && { color: theme.colors.secondaryText }]}>{gamePreset.title}</Text>
                       <Text style={[styles.optionMeta, isSelected && { color: theme.colors.secondaryText }]}>{gamePreset.category}</Text>
                     </View>
-                    <Text style={[styles.optionDescription, isSelected && { color: theme.colors.secondaryText }]}>{gamePreset.description}</Text>
+                    <Text numberOfLines={1} style={[styles.optionDescription, isSelected && { color: theme.colors.secondaryText }]}>{gamePreset.description}</Text>
                   </Pressable>
                   <Pressable accessibilityRole="button" onPress={() => setRulesModalPresetId(gamePreset.id)} style={({ pressed }) => [styles.rulesButton, pressed && styles.pressed]}>
                     <Text style={styles.rulesButtonText}>{t('gameRules')}</Text>
@@ -429,7 +426,7 @@ export default function MatchSettingsScreen() {
                     pressed && styles.pressed,
                   ]}>
                   <Text style={[styles.optionTitle, isSelected && { color: theme.colors.secondaryText }]}>{preset.title}</Text>
-                  <Text style={[styles.optionDescription, isSelected && { color: theme.colors.secondaryText }]}>{preset.description}</Text>
+                  <Text numberOfLines={1} style={[styles.optionDescription, isSelected && { color: theme.colors.secondaryText }]}>{preset.description}</Text>
                 </Pressable>
               );
             })}
@@ -502,13 +499,13 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    gap: 18,
+    gap: 7,
     width: '100%',
     maxWidth: 760,
     alignSelf: 'center',
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 32,
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 18,
   },
   centered: {
     flex: 1,
@@ -518,10 +515,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   heroCard: {
-    gap: 8,
+    gap: 0,
     borderRadius: 8,
     backgroundColor: '#172033',
-    padding: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.14,
@@ -536,9 +534,9 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: '900',
-    lineHeight: 29,
+    lineHeight: 20,
   },
   subtitle: {
     color: '#CBD5E1',
@@ -546,10 +544,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   card: {
-    gap: 9,
+    gap: 6,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 12,
+    padding: 8,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
@@ -558,20 +556,21 @@ const styles = StyleSheet.create({
   },
   label: {
     color: '#334155',
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: '900',
-    marginTop: 4,
+    marginTop: 0,
+    textTransform: 'uppercase',
   },
   input: {
-    minHeight: 44,
+    minHeight: 36,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#D8DEE8',
     backgroundColor: '#F8FAFC',
     color: '#111827',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
   },
   rulesOverlay: {
     flex: 1,
@@ -612,7 +611,7 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   teamModePanel: {
-    minHeight: 58,
+    minHeight: 38,
     borderRadius: 8,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
@@ -621,7 +620,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    padding: 10,
+    padding: 7,
   },
   teamModeTextBlock: {
     flex: 1,
@@ -629,61 +628,61 @@ const styles = StyleSheet.create({
   },
   teamModeTitle: {
     color: '#111827',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '900',
   },
   teamModeText: {
     color: '#64748B',
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 13,
   },
   teamSwitch: {
-    minWidth: 58,
+    minWidth: 48,
     borderRadius: 999,
     backgroundColor: '#E2E8F0',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   teamSwitchText: {
     color: '#64748B',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '900',
   },
   teamSwitchTextActive: {
     color: '#FFFFFF',
   },
   teamSummaryTable: {
-    gap: 6,
+    gap: 4,
   },
   teamSummaryRow: {
-    minHeight: 42,
+    minHeight: 30,
     borderRadius: 8,
     backgroundColor: '#111827',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
   teamSummaryName: {
     width: 72,
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '900',
   },
   teamSummaryPlayers: {
     flex: 1,
     color: '#CBD5E1',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
   },
   addPlayerPanel: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   addPlayerInput: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 36,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#D8DEE8',
@@ -691,11 +690,11 @@ const styles = StyleSheet.create({
     color: '#111827',
     fontSize: 14,
     fontWeight: '800',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
   },
   addPlayerButton: {
-    minWidth: 62,
-    minHeight: 44,
+    minWidth: 56,
+    minHeight: 36,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -703,7 +702,7 @@ const styles = StyleSheet.create({
   },
   addPlayerButtonText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
   },
   helperText: {
@@ -712,35 +711,35 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   playerTeamList: {
-    gap: 8,
+    gap: 5,
   },
   playerTeamRow: {
-    minHeight: 54,
+    minHeight: 40,
     borderRadius: 8,
     backgroundColor: '#F3F7FB',
     alignItems: 'stretch',
-    gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    gap: 5,
+    paddingHorizontal: 7,
+    paddingVertical: 6,
   },
   playerTeamTextBlock: {
     flex: 1,
     gap: 3,
   },
   playerNameInput: {
-    minHeight: 40,
+    minHeight: 32,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
     color: '#111827',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '800',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
   },
   playerTeamMeta: {
     color: '#64748B',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
   },
   playerActionRow: {
@@ -752,27 +751,28 @@ const styles = StyleSheet.create({
   removePlayerButton: {
     borderRadius: 999,
     backgroundColor: '#FEE2E2',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   removePlayerButtonText: {
     color: '#B91C1C',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '900',
   },
   optionList: {
-    gap: 10,
+    gap: 4,
   },
   optionCard: {
-    gap: 6,
+    gap: 3,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     backgroundColor: '#F8FAFC',
-    padding: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   optionPressArea: {
-    gap: 6,
+    gap: 3,
   },
   optionHeader: {
     flexDirection: 'row',
@@ -783,30 +783,30 @@ const styles = StyleSheet.create({
   optionTitle: {
     flex: 1,
     color: '#111827',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '900',
   },
   optionMeta: {
     color: '#64748B',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
   optionDescription: {
     color: '#64748B',
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 10,
+    lineHeight: 13,
   },
   rulesButton: {
     alignSelf: 'flex-start',
     borderRadius: 999,
     backgroundColor: '#E2E8F0',
-    paddingHorizontal: 11,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   rulesButtonText: {
     color: '#334155',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '900',
   },
   rulesCard: {
@@ -853,7 +853,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   primaryButton: {
-    minHeight: 46,
+    minHeight: 40,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -866,7 +866,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 13,
     fontWeight: '900',
   },
   emptyTitle: {

@@ -14,13 +14,6 @@ export default function TabLayout() {
           title: 'ScoreMate',
         }}
       />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          href: null,
-          title: 'Explore',
-        }}
-      />
     </Tabs>
   );
 }

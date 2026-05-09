@@ -29,7 +29,6 @@ export default function RootLayout() {
           <Stack.Screen name="matches/backup" options={{ title: t('backupRestore') }} />
           <Stack.Screen name="matches/themes" options={{ title: t('themes') }} />
           <Stack.Screen name="matches/language" options={{ title: t('language') }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

@@ -1,31 +1,24 @@
 import { router, useFocusEffect, type Href } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  customGamePresetId,
-  gamePresetCategories,
-  getGamePreset,
-  getGamePresetsByCategory,
-  getRecentGamePresets,
-  type GamePresetCategoryFilter,
-} from '@/features/matches/gamePresets';
+import { getGamePreset } from '@/features/matches/gamePresets';
 import { createReplayMatch } from '@/features/matches/matchFactory';
 import { deleteMatch, getMatches, saveMatch } from '@/features/matches/matchStorage';
 import { savePlayerNames } from '@/features/matches/playerStorage';
-import { getScoringPreset, getScoringRuleSummary, scoringPresets } from '@/features/matches/scoringRules';
+import { getScoringRuleSummary } from '@/features/matches/scoringRules';
 import { getPlayerStandings } from '@/features/matches/scoreCalculator';
 import { formatMatchShareText } from '@/features/matches/shareFormatter';
 import { getHasSeenWelcome, markWelcomeSeen } from '@/features/matches/welcomeStorage';
 import { useKeyboardBottomInset } from '@/hooks/use-keyboard-bottom-inset';
 import { useScoreMateTheme } from '@/hooks/use-scoremate-theme';
 import { useI18n, type TranslationKey } from '@/src/i18n';
-import type { Match, ScoringMode } from '@/features/matches/types';
+import type { Match } from '@/features/matches/types';
 
-const matchFilters = ['all', 'live', 'completed'] as const;
+const defaultHomeGamePresetId = 'least-count-cards';
 
 const welcomeFeatures: {
   titleKey: TranslationKey;
@@ -54,23 +47,8 @@ const welcomeFeatures: {
   },
 ];
 
-type MatchFilter = (typeof matchFilters)[number];
-
 function getTeamCount(match: Match) {
   return new Set(match.players.map((player) => player.teamName).filter(Boolean)).size;
-}
-
-function formatUpdatedDate(updatedAt: string) {
-  const date = new Date(updatedAt);
-
-  if (Number.isNaN(date.getTime())) {
-    return 'Updated recently';
-  }
-
-  return `Updated ${date.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${date.toLocaleTimeString([], {
-    hour: 'numeric',
-    minute: '2-digit',
-  })}`;
 }
 
 export default function HomeScreen() {
@@ -80,14 +58,7 @@ export default function HomeScreen() {
   const keyboardBottomInset = useKeyboardBottomInset();
   const [matches, setMatches] = useState<Match[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [matchFilter, setMatchFilter] = useState<MatchFilter>('all');
-  const [selectedGamePresetId, setSelectedGamePresetId] = useState('least-count-cards');
-  const [selectedScoringMode, setSelectedScoringMode] = useState<ScoringMode>('outLimit');
-  const [isGamePickerOpen, setIsGamePickerOpen] = useState(false);
-  const [isScoringPickerOpen, setIsScoringPickerOpen] = useState(false);
   const [isRecentMatchesOpen, setIsRecentMatchesOpen] = useState(false);
-  const [selectedGameCategory, setSelectedGameCategory] = useState<GamePresetCategoryFilter>('All');
-  const [rulesModalPresetId, setRulesModalPresetId] = useState<string | null>(null);
   const [isWelcomeVisible, setIsWelcomeVisible] = useState(false);
 
   useEffect(() => {
@@ -128,13 +99,6 @@ export default function HomeScreen() {
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const filteredMatches = matches.filter((match) => {
-    const isCompleted = match.status === 'completed';
-    const statusMatches = matchFilter === 'all' || (matchFilter === 'completed' ? isCompleted : !isCompleted);
-
-    if (!statusMatches) {
-      return false;
-    }
-
     if (!normalizedSearchQuery) {
       return true;
     }
@@ -147,37 +111,7 @@ export default function HomeScreen() {
     return searchableText.includes(normalizedSearchQuery);
   });
   const visibleMatches = filteredMatches;
-  const liveMatchCount = matches.filter((match) => match.status !== 'completed').length;
-  const completedMatchCount = matches.length - liveMatchCount;
-  const selectedGamePreset = getGamePreset(selectedGamePresetId);
-  const selectedScoringPreset = getScoringPreset(selectedScoringMode);
-  const rulesModalPreset = getGamePreset(rulesModalPresetId);
-  const recentGamePresets = useMemo(() => getRecentGamePresets(matches), [matches]);
-  const visibleGamePresets = useMemo(
-    () => (selectedGameCategory === 'Recent' ? recentGamePresets : getGamePresetsByCategory(selectedGameCategory)),
-    [recentGamePresets, selectedGameCategory],
-  );
-  const createMatchHref = `/matches/create?gamePresetId=${encodeURIComponent(selectedGamePresetId)}&scoringMode=${encodeURIComponent(selectedScoringMode)}` as Href;
-
-  function handleSelectHomeGamePreset(presetId: string) {
-    const preset = getGamePreset(presetId);
-
-    setSelectedGamePresetId(preset?.id ?? customGamePresetId);
-
-    if (preset) {
-      setSelectedScoringMode(preset.scoringMode);
-    } else {
-      setSelectedScoringMode('highestScoreWins');
-    }
-
-    setIsGamePickerOpen(false);
-  }
-
-  function handleSelectHomeScoringMode(mode: ScoringMode) {
-    setSelectedGamePresetId(customGamePresetId);
-    setSelectedScoringMode(mode);
-    setIsScoringPickerOpen(false);
-  }
+  const createMatchHref = `/matches/create?gamePresetId=${encodeURIComponent(defaultHomeGamePresetId)}&scoringMode=outLimit` as Href;
 
   function handleDeleteMatch(match: Match) {
     Alert.alert('Delete match?', `Delete "${match.name}" and all of its rounds?`, [
@@ -252,21 +186,13 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.subtitle}>{t('homeSubtitle')}</Text>
-        <View style={styles.heroChipRow}>
-          <View style={styles.heroChip}>
-            <Text style={styles.heroChipText}>Offline</Text>
-          </View>
-          <View style={styles.heroChip}>
-            <Text style={styles.heroChipText}>No login</Text>
-          </View>
-        </View>
       </View>
 
       <View style={styles.quickStartCard}>
         <View style={styles.quickStartHeader}>
           <View>
             <Text style={styles.quickStartTitle}>{t('startNewMatch')}</Text>
-            <Text style={styles.quickStartHint}>Choose a game, then add players.</Text>
+            <Text style={styles.quickStartHint}>Set up players and rules on the next screen.</Text>
           </View>
         </View>
 
@@ -276,159 +202,6 @@ export default function HomeScreen() {
           style={({ pressed }) => [styles.primaryButton, styles.quickStartPrimaryButton, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primaryShadow }, pressed && styles.pressed]}>
           <Text style={styles.primaryButtonText}>{t('startNewMatch')}</Text>
         </Pressable>
-
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setIsGamePickerOpen((value) => !value)}
-          style={({ pressed }) => [
-            styles.quickSelectorRow,
-            isGamePickerOpen && styles.quickSelectorRowOpen,
-            pressed && styles.pressed,
-          ]}>
-          <View style={styles.quickSelectorText}>
-            <Text style={styles.quickSelectorLabel}>{t('selectGame')}</Text>
-            <Text numberOfLines={1} style={styles.quickSelectorValue}>{selectedGamePreset?.title ?? t('customScorekeeper')}</Text>
-          </View>
-          <View style={styles.quickSelectorActions}>
-            {selectedGamePreset ? (
-              <Pressable accessibilityRole="button" onPress={() => setRulesModalPresetId(selectedGamePreset.id)} style={({ pressed }) => [styles.rulesButton, pressed && styles.pressed]}>
-                <Text style={styles.rulesButtonText}>{t('gameRules')}</Text>
-              </Pressable>
-            ) : null}
-            <View style={styles.quickArrowButton}>
-              <Text style={styles.quickArrowButtonText}>{isGamePickerOpen ? '↑' : '↓'}</Text>
-            </View>
-          </View>
-        </Pressable>
-
-        {isGamePickerOpen ? (
-          <View style={styles.quickPickerList}>
-            <View style={styles.categoryRow}>
-              {gamePresetCategories.map((category) => {
-                const isSelected = selectedGameCategory === category;
-
-                return (
-                  <Pressable
-                    accessibilityRole="button"
-                    key={category}
-                    onPress={() => setSelectedGameCategory(category)}
-                    style={({ pressed }) => [
-                      styles.categoryChip,
-                      isSelected && { backgroundColor: theme.colors.secondary, borderColor: theme.colors.secondaryText },
-                      pressed && styles.pressed,
-                    ]}>
-                    <Text style={[styles.categoryChipText, isSelected && { color: theme.colors.secondaryText }]}>{category}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {selectedGameCategory === 'All' ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => handleSelectHomeGamePreset(customGamePresetId)}
-                style={({ pressed }) => [
-                  styles.quickOptionRow,
-                  selectedGamePresetId === customGamePresetId && { backgroundColor: theme.colors.softAccent, borderColor: theme.colors.accent },
-                  pressed && styles.pressed,
-                ]}>
-                <View style={styles.quickOptionText}>
-                  <Text style={[styles.quickOptionTitle, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>{t('customScorekeeper')}</Text>
-                  <Text style={[styles.quickOptionDescription, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Works for any manual score game.</Text>
-                </View>
-                <Text style={[styles.quickOptionMeta, selectedGamePresetId === customGamePresetId && { color: theme.colors.secondaryText }]}>Default</Text>
-              </Pressable>
-            ) : null}
-
-            {selectedGameCategory === 'Recent' && visibleGamePresets.length === 0 ? (
-              <View style={styles.emptyPickerCard}>
-                <Text style={styles.emptyPickerTitle}>No recent games yet</Text>
-                <Text style={styles.emptyPickerText}>Start a game once and it will show here for faster setup next time.</Text>
-              </View>
-            ) : null}
-
-            {visibleGamePresets.map((preset) => {
-              const isSelected = selectedGamePresetId === preset.id;
-
-              return (
-                <Pressable
-                  accessibilityRole="button"
-                  key={preset.id}
-                  onPress={() => handleSelectHomeGamePreset(preset.id)}
-                  style={({ pressed }) => [
-                    styles.quickOptionRow,
-                    isSelected && { backgroundColor: theme.colors.softAccent, borderColor: theme.colors.accent },
-                    pressed && styles.pressed,
-                  ]}>
-                  <View style={styles.quickOptionText}>
-                    <Text style={[styles.quickOptionTitle, isSelected && { color: theme.colors.secondaryText }]}>{preset.title}</Text>
-                    <Text style={[styles.quickOptionDescription, isSelected && { color: theme.colors.secondaryText }]}>{preset.description}</Text>
-                  </View>
-                  <Text style={[styles.quickOptionMeta, isSelected && { color: theme.colors.secondaryText }]}>{preset.category}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setIsScoringPickerOpen((value) => !value)}
-          style={({ pressed }) => [
-            styles.quickSelectorRow,
-            isScoringPickerOpen && styles.quickSelectorRowOpen,
-            pressed && styles.pressed,
-          ]}>
-          <View style={styles.quickSelectorText}>
-            <Text style={styles.quickSelectorLabel}>{t('scoringStyle')}</Text>
-            <Text numberOfLines={1} style={styles.quickSelectorValue}>{selectedScoringPreset.title}</Text>
-          </View>
-          <View style={styles.quickArrowButton}>
-            <Text style={styles.quickArrowButtonText}>{isScoringPickerOpen ? '↑' : '↓'}</Text>
-          </View>
-        </Pressable>
-
-        {isScoringPickerOpen ? (
-          <View style={styles.quickPickerList}>
-            {scoringPresets.map((preset) => {
-              const isSelected = preset.mode === selectedScoringMode;
-
-              return (
-                <Pressable
-                  accessibilityRole="button"
-                  key={preset.mode}
-                  onPress={() => handleSelectHomeScoringMode(preset.mode)}
-                  style={({ pressed }) => [
-                    styles.quickOptionRow,
-                    isSelected && { backgroundColor: theme.colors.softAccent, borderColor: theme.colors.accent },
-                    pressed && styles.pressed,
-                  ]}>
-                  <View style={styles.quickOptionText}>
-                    <Text style={[styles.quickOptionTitle, isSelected && { color: theme.colors.secondaryText }]}>{preset.title}</Text>
-                    <Text style={[styles.quickOptionDescription, isSelected && { color: theme.colors.secondaryText }]}>{preset.description}</Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-
-      </View>
-
-      <View style={styles.capabilityCard}>
-        <View style={styles.capabilityHeader}>
-          <Text style={styles.capabilityTitle}>{t('whatYouCanDo')}</Text>
-        </View>
-        <View style={styles.capabilityGrid}>
-          {welcomeFeatures.map((feature) => (
-            <View key={feature.titleKey} style={styles.capabilityItem}>
-              <View style={[styles.capabilityIcon, { backgroundColor: theme.colors.cardTint }]}>
-                <Ionicons name={feature.icon} size={15} color={theme.colors.primaryShadow} />
-              </View>
-              <Text style={styles.capabilityItemText}>{t(feature.titleKey)}</Text>
-            </View>
-          ))}
-        </View>
       </View>
 
       <View style={styles.recentSectionCard}>
@@ -459,26 +232,6 @@ export default function HomeScreen() {
                   style={styles.searchInput}
                   value={searchQuery}
                 />
-                <View style={styles.filterRow}>
-                  {matchFilters.map((filter) => {
-                    const isSelected = filter === matchFilter;
-                    const label = filter === 'all' ? `All ${matches.length}` : filter === 'live' ? `Live ${liveMatchCount}` : `Completed ${completedMatchCount}`;
-
-                    return (
-                      <Pressable
-                        accessibilityRole="button"
-                        key={filter}
-                        onPress={() => setMatchFilter(filter)}
-                        style={({ pressed }) => [
-                          styles.filterChip,
-                          isSelected && { backgroundColor: theme.colors.secondary, borderColor: theme.colors.secondaryText },
-                          pressed && styles.pressed,
-                        ]}>
-                        <Text style={[styles.filterChipText, isSelected && { color: theme.colors.secondaryText }]}>{label}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
               </View>
             ) : null}
 
@@ -490,9 +243,9 @@ export default function HomeScreen() {
             ) : (
               <View style={styles.matchList}>
           {visibleMatches.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>No matches found</Text>
-              <Text style={styles.emptyText}>Try another search or filter.</Text>
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyTitle}>No matches found</Text>
+              <Text style={styles.emptyText}>Try another search.</Text>
             </View>
           ) : null}
           {visibleMatches.map((match) => {
@@ -541,22 +294,14 @@ export default function HomeScreen() {
                   style={({ pressed }) => [styles.matchCard, isCompleted && styles.completedMatchCard, pressed && styles.pressed]}>
                   <View style={styles.matchOpenArea}>
                   <View style={styles.matchCardTop}>
-                    <Text style={styles.matchName}>{match.name}</Text>
-                    <View style={styles.matchMetaBlock}>
-                      <View style={[styles.matchStatusChip, isCompleted ? styles.completedStatusChip : styles.liveStatusChip]}>
-                      <Text style={[styles.matchStatusText, isCompleted ? styles.completedStatusText : styles.liveStatusText]}>
-                          {isCompleted ? 'Completed' : 'Live'}
-                        </Text>
-                      </View>
-                      <Text style={styles.matchMeta}>{match.players.length} players</Text>
-                      <Text style={styles.matchUpdatedAt}>{formatUpdatedDate(match.updatedAt)}</Text>
+                    <View style={styles.matchTitleBlock}>
+                      <Text numberOfLines={1} style={styles.matchName}>{match.name}</Text>
+                      <Text numberOfLines={1} style={styles.matchDetail}>
+                        {gamePresetLabel ? `${gamePresetLabel} - ` : ''}{teamCount > 1 ? `${teamCount} teams - ` : ''}{match.players.length} players - {match.rounds.length} rounds
+                      </Text>
                     </View>
                   </View>
-                  <Text style={styles.matchDetail}>
-                    {gamePresetLabel ? `${gamePresetLabel} - ` : ''}{teamCount > 1 ? `${teamCount} teams - ` : ''}{getScoringRuleSummary(match)} - {match.rounds.length} rounds
-                  </Text>
                   {leader ? <Text style={styles.winnerLine}>{isCompleted ? 'Final' : winner ? 'Winner' : 'Leader'}: {leader.player.name}</Text> : null}
-                  <Text style={styles.swipeHint}>Swipe left for actions</Text>
                   </View>
                 </Pressable>
               </Swipeable>
@@ -569,37 +314,6 @@ export default function HomeScreen() {
       </View>
     </ScrollView>
     </View>
-    <Modal animationType="slide" onRequestClose={() => setRulesModalPresetId(null)} transparent visible={Boolean(rulesModalPreset)}>
-      <View style={styles.rulesOverlay}>
-        <View style={[styles.rulesSheet, { backgroundColor: theme.colors.screen }]}>
-          {rulesModalPreset ? (
-            <ScrollView contentContainerStyle={styles.rulesSheetContent}>
-              <View style={[styles.rulesHero, { backgroundColor: theme.colors.hero }]}>
-                <Text style={[styles.kicker, { color: theme.colors.accent }]}>{t('gameRules')}</Text>
-                <Text style={styles.rulesSheetTitle}>{rulesModalPreset.title}</Text>
-                <Text style={styles.rulesSheetSubtitle}>{rulesModalPreset.description}</Text>
-              </View>
-              <View style={styles.rulesCard}>
-                <Text style={styles.rulesLabel}>Objective</Text>
-                <Text style={styles.rulesText}>{rulesModalPreset.rules.objective}</Text>
-                <Text style={styles.rulesLabel}>Scoring</Text>
-                {rulesModalPreset.rules.scoring.map((rule) => (
-                  <Text key={rule} style={styles.rulesText}>- {rule}</Text>
-                ))}
-                <Text style={styles.rulesLabel}>Winning</Text>
-                <Text style={styles.rulesText}>{rulesModalPreset.rules.winning}</Text>
-                {rulesModalPreset.rules.notes?.map((note) => (
-                  <Text key={note} style={styles.rulesNote}>Note: {note}</Text>
-                ))}
-              </View>
-              <Pressable accessibilityRole="button" onPress={() => setRulesModalPresetId(null)} style={({ pressed }) => [styles.rulesCloseButton, { backgroundColor: theme.colors.primary }, pressed && styles.pressed]}>
-                <Text style={styles.rulesCloseButtonText}>{t('done')}</Text>
-              </Pressable>
-            </ScrollView>
-          ) : null}
-        </View>
-      </View>
-    </Modal>
     <Modal animationType="fade" onRequestClose={handleDismissWelcome} transparent visible={isWelcomeVisible}>
       <View style={styles.welcomeOverlay}>
         <View style={styles.welcomeCard}>
@@ -649,7 +363,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    gap: 12,
+    gap: 9,
     width: '100%',
     maxWidth: 760,
     alignSelf: 'center',
@@ -1213,14 +927,15 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   recentToggleHeader: {
-    minHeight: 42,
+    minHeight: 38,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
-    padding: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.06,
@@ -1228,10 +943,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   matchToolsCard: {
-    gap: 8,
+    gap: 6,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    padding: 10,
+    padding: 7,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.06,
@@ -1239,13 +954,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   searchInput: {
-    minHeight: 42,
+    minHeight: 36,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#CBD5E1',
     backgroundColor: '#F8FAFC',
     color: '#111827',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     paddingHorizontal: 12,
   },
@@ -1289,12 +1004,12 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   matchList: {
-    gap: 8,
+    gap: 6,
   },
   matchCard: {
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    borderLeftWidth: 4,
+    borderLeftWidth: 3,
     borderLeftColor: '#14B8A6',
     overflow: 'hidden',
     shadowColor: '#0F172A',
@@ -1309,8 +1024,9 @@ const styles = StyleSheet.create({
   },
   matchOpenArea: {
     flex: 1,
-    gap: 5,
-    padding: 11,
+    gap: 3,
+    paddingHorizontal: 9,
+    paddingVertical: 8,
   },
   matchCardTop: {
     flexDirection: 'row',
@@ -1319,10 +1035,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   matchName: {
-    flex: 1,
     color: '#111827',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
+  },
+  matchTitleBlock: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
   },
   matchMeta: {
     color: '#475569',
@@ -1336,12 +1056,11 @@ const styles = StyleSheet.create({
   },
   matchMetaBlock: {
     alignItems: 'flex-end',
-    gap: 4,
   },
   matchStatusChip: {
     borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
   liveStatusChip: {
     backgroundColor: '#D9F9F3',
@@ -1350,7 +1069,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
   },
   matchStatusText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
@@ -1362,8 +1081,8 @@ const styles = StyleSheet.create({
   },
   matchDetail: {
     color: '#64748B',
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 11,
+    lineHeight: 14,
   },
   limitCard: {
     gap: 6,
@@ -1385,7 +1104,7 @@ const styles = StyleSheet.create({
   },
   winnerLine: {
     color: '#059669',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
   },
   swipeHint: {
